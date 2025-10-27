@@ -1,16 +1,51 @@
 <?php
 class Request {
-    public $method;
-    public $body;
-    public $query;
-    public $headers;
+    /**
+     * Retorna o método HTTP da requisição
+     */
+    public static function getMethod(): string {
+        return $_SERVER['REQUEST_METHOD'] ?? 'GET';
+    }
 
-    public function __construct() {
-        $this->method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-        $this->query = $_GET ?? [];
-        $this->headers = getallheaders();
-
+    /**
+     * Retorna o corpo da requisição (JSON ou POST)
+     */
+    public static function getBody(): array {
         $input = file_get_contents('php://input');
-        $this->body = json_decode($input, true) ?? $_POST;
+        $json = json_decode($input, true);
+        
+        if ($json !== null) {
+            return $json;
+        }
+        
+        return $_POST ?? [];
+    }
+
+    /**
+     * Retorna os parâmetros da query string
+     */
+    public static function getQuery(): array {
+        return $_GET ?? [];
+    }
+
+    /**
+     * Retorna um parâmetro específico da query string
+     */
+    public static function getQueryParam(string $key, $default = null) {
+        return $_GET[$key] ?? $default;
+    }
+
+    /**
+     * Retorna os arquivos enviados
+     */
+    public static function getFiles(): array {
+        return $_FILES ?? [];
+    }
+
+    /**
+     * Retorna os headers da requisição
+     */
+    public static function getHeaders(): array {
+        return getallheaders() ?: [];
     }
 }

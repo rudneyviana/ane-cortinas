@@ -134,12 +134,85 @@ CREATE TABLE `order_items` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
--- Dados Iniciais (Seed)
+-- ========================================
+-- DADOS INICIAIS (SEED DATA)
+-- ========================================
+
+-- Usuário Admin
 -- Senha para admin@example.com é 'password'
 INSERT INTO `users` (`name`, `email`, `password_hash`, `role`) VALUES
-('Admin User', 'admin@example.com', '$2y$10$9.dajNq0B.y/lXU5g2v6d.2y2Jv.wJ2c7vY3g2d.Xp7fL2n5a.4O', 'ADMIN');
+('Admin User', 'admin@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'ADMIN');
 
+-- Categorias
 INSERT INTO `categories` (`id`, `name`) VALUES
 (1, 'Cortinas'),
 (2, 'Almofadas'),
 (3, 'Pingentes');
+
+-- Cores
+INSERT INTO `colors` (`id`, `name`, `hex_code`) VALUES
+(1, 'Bege', '#F5F5DC'),
+(2, 'Cinza', '#808080'),
+(3, 'Azul Marinho', '#000080'),
+(4, 'Verde Musgo', '#8A9A5B'),
+(5, 'Terracota', '#E2725B');
+
+-- Tecidos
+INSERT INTO `fabrics` (`id`, `name`, `width`, `height`, `color_id`, `stock_quantity_sqm`) VALUES
+(1, 'Linho Premium', 2.80, 50.00, 1, 150.00),
+(2, 'Veludo Luxo', 1.40, 30.00, 2, 80.00),
+(3, 'Algodão Blackout', 2.80, 40.00, 3, 120.00),
+(4, 'Voil Transparente', 2.80, 60.00, 1, 200.00),
+(5, 'Jacquard Elegante', 1.40, 25.00, 4, 60.00);
+
+-- Produtos - Cortinas
+INSERT INTO `products` (`id`, `name`, `description`, `price`, `category_id`, `is_active`) VALUES
+(1, 'Cortina Elegance Bege', 'Cortina em linho premium com acabamento sofisticado. Ideal para salas de estar e quartos que buscam elegância e sofisticação.', 450.00, 1, TRUE),
+(2, 'Cortina Blackout Premium', 'Cortina blackout em tecido de alta qualidade que bloqueia 100% da luz. Perfeita para quartos e home theaters.', 580.00, 1, TRUE),
+(3, 'Cortina Veludo Luxo', 'Cortina em veludo com caimento pesado e textura aveludada. Ideal para ambientes clássicos e elegantes.', 720.00, 1, TRUE),
+(4, 'Cortina Voil Transparente', 'Cortina leve e delicada em voil transparente. Permite entrada de luz natural mantendo privacidade.', 320.00, 1, TRUE);
+
+-- Produtos - Almofadas
+INSERT INTO `products` (`id`, `name`, `description`, `price`, `category_id`, `is_active`) VALUES
+(5, 'Almofada Decorativa Terracota', 'Almofada em tecido linho com enchimento de fibra siliconizada. Acabamento com zíper invisível.', 85.00, 2, TRUE),
+(6, 'Almofada Veludo Cinza', 'Almofada em veludo macio com enchimento premium. Design contemporâneo e elegante.', 95.00, 2, TRUE),
+(7, 'Almofada Bordada Verde', 'Almofada com bordado artesanal em tons de verde. Peça exclusiva e sofisticada.', 120.00, 2, TRUE);
+
+-- Produtos - Pingentes
+INSERT INTO `products` (`id`, `name`, `description`, `price`, `category_id`, `is_active`) VALUES
+(8, 'Pingente Decorativo Dourado', 'Pingente em metal dourado com design clássico. Ideal para enfeitar cortinas e cenefas.', 45.00, 3, TRUE),
+(9, 'Pingente Cristal Premium', 'Pingente com detalhes em cristal que refletem a luz. Design sofisticado e elegante.', 65.00, 3, TRUE);
+
+-- Imagens dos Produtos
+INSERT INTO `product_images` (`product_id`, `image_url`, `alt_text`, `sort_order`) VALUES
+-- Cortinas
+(1, 'https://images.pexels.com/photos/1350789/pexels-photo-1350789.jpeg?auto=compress&cs=tinysrgb&w=600', 'Cortina Elegance Bege em sala de estar', 0),
+(2, 'https://images.pexels.com/photos/923192/pexels-photo-923192.jpeg?auto=compress&cs=tinysrgb&w=600', 'Cortina Blackout Premium em quarto', 0),
+(3, 'https://images.pexels.com/photos/1648776/pexels-photo-1648776.jpeg?auto=compress&cs=tinysrgb&w=600', 'Cortina Veludo Luxo em ambiente clássico', 0),
+(4, 'https://images.pexels.com/photos/1457847/pexels-photo-1457847.jpeg?auto=compress&cs=tinysrgb&w=600', 'Cortina Voil Transparente em janela', 0),
+-- Almofadas
+(5, 'https://images.pexels.com/photos/1350789/pexels-photo-1350789.jpeg?auto=compress&cs=tinysrgb&w=600', 'Almofada Decorativa Terracota', 0),
+(6, 'https://images.pexels.com/photos/1350789/pexels-photo-1350789.jpeg?auto=compress&cs=tinysrgb&w=600', 'Almofada Veludo Cinza', 0),
+(7, 'https://images.pexels.com/photos/1350789/pexels-photo-1350789.jpeg?auto=compress&cs=tinysrgb&w=600', 'Almofada Bordada Verde', 0),
+-- Pingentes
+(8, 'https://images.pexels.com/photos/6633923/pexels-photo-6633923.jpeg?auto=compress&cs=tinysrgb&w=600', 'Pingente Decorativo Dourado', 0),
+(9, 'https://images.pexels.com/photos/6633923/pexels-photo-6633923.jpeg?auto=compress&cs=tinysrgb&w=600', 'Pingente Cristal Premium', 0);
+
+-- Detalhes das Cortinas
+INSERT INTO `product_curtains` (`product_id`, `rail_type`, `rail_color`, `rail_width`, `fabric_id_main`, `fabric_id_lining`, `fabric_id_voile`) VALUES
+(1, 'Trilho Suíço', 'Branco', 2.80, 1, NULL, 4),
+(2, 'Varão Cromado', 'Cromado', 3.00, 3, NULL, NULL),
+(3, 'Trilho Suíço', 'Preto', 2.50, 2, NULL, NULL),
+(4, 'Varão Branco', 'Branco', 2.00, 4, NULL, NULL);
+
+-- Detalhes das Almofadas e Pingentes
+INSERT INTO `product_cushions_pendants` (`product_id`, `color_id`, `height`, `width`, `stock_quantity`) VALUES
+(5, 5, 45.00, 45.00, 25),
+(6, 2, 50.00, 50.00, 30),
+(7, 4, 40.00, 60.00, 15),
+(8, NULL, 15.00, 5.00, 50),
+(9, NULL, 12.00, 4.00, 40);
+
+-- Cliente de exemplo
+INSERT INTO `customers` (`name`, `email`, `phone`, `city`, `state`) VALUES
+('Maria Silva', 'maria.silva@example.com', '(45) 99999-8888', 'Medianeira', 'PR');
