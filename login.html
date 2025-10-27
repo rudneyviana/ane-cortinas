@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrar - Ane Cortinas</title>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="bg-stone-100 text-stone-800 antialiased">
+
+    <header id="main-header" class="sticky top-0 z-40 bg-white/80 backdrop-blur-lg shadow-sm"></header>
+
+    <main class="container mx-auto px-4 py-12 lg:py-16">
+        <div class="text-center mb-12">
+            <h1 class="text-3xl font-semibold">Entre na sua conta</h1>
+        </div>
+
+        <div id="login-form" class="max-w-md mx-auto">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="flex border-b border-stone-200 mb-6">
+                    <button id="login-tab-btn" class="tab-btn active">Entrar</button>
+                    <button id="register-tab-btn" class="tab-btn">Registrar</button>
+                </div>
+
+                <div id="error-message" class="mb-4 text-sm text-red-600 hidden"></div>
+
+                <div id="login-form-container">
+                    <form id="login-form" class="space-y-4" action="#" method="POST">
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700">Email</label>
+                            <input name="email" type="email" required class="form-input mt-1" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700">Senha</label>
+                            <input name="password" type="password" required class="form-input mt-1" />
+                        </div>
+                        <div class="flex justify-end">
+                            <button type="submit" class="btn-primary">Entrar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="register-form-container" class="hidden">
+                    <form id="register-form" class="space-y-4" action="#" method="POST">
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700">Nome</label>
+                            <input name="name" type="text" required class="form-input mt-1" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700">Email</label>
+                            <input name="email" type="email" required class="form-input mt-1" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700">Senha</label>
+                            <input name="password" type="password" required class="form-input mt-1" />
+                        </div>
+                        <div class="flex justify-end">
+                            <button type="submit" class="btn-primary">Registrar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer id="main-footer" class="bg-stone-800 text-stone-300"></footer>
+
+    <script type="module" src="js/login_logic.js"></script>
+</body>
+
+</html>
