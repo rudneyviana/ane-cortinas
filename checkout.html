@@ -22,11 +22,67 @@
             <h1 class="text-4xl lg:text-5xl font-playfair-display font-bold">Finalizar Compra</h1>
         </div>
 
-        <div id="checkout-content" class="w-full max-w-3xl mx-auto">
-            
+        <!-- Steps Indicator -->
+        <div id="checkout-steps-container" class="max-w-3xl mx-auto mb-8">
+            <div class="flex items-center justify-between">
+                <div class="step" data-step="1">
+                    <div class="step-icon">1</div>
+                    <span class="text-sm ml-2">Identificação</span>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step" data-step="2">
+                    <div class="step-icon">2</div>
+                    <span class="text-sm ml-2">Entrega</span>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step" data-step="3">
+                    <div class="step-icon">3</div>
+                    <span class="text-sm ml-2">Pagamento</span>
+                </div>
+            </div>
         </div>
 
+        <div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Checkout Form -->
+            <div class="lg:col-span-2">
+                <div id="checkout-form" class="bg-white p-6 rounded-lg shadow-md">
+                    <!-- Form content will be rendered by JavaScript -->
+                    <div class="flex justify-center py-8">
+                        <div class="loader"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="lg:col-span-1">
+                <div id="order-summary" class="bg-white p-6 rounded-lg shadow-md sticky top-28">
+                    <!-- Order summary will be rendered by JavaScript -->
+                    <div class="flex justify-center py-8">
+                        <div class="loader"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
+
+    <!-- Success Modal -->
+    <div id="success-modal" class="hidden fixed inset-0 bg-black/50 items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="check-circle" class="w-10 h-10 text-green-600"></i>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">Pedido Realizado!</h2>
+            <p class="text-stone-600 mb-6">Seu pedido foi confirmado com sucesso. Você receberá um email de confirmação em breve.</p>
+            <div class="flex gap-4">
+                <a href="account.html" class="flex-1 bg-amber-800 text-white py-3 px-4 rounded-md hover:bg-amber-900 transition-colors font-semibold">
+                    Meus Pedidos
+                </a>
+                <a href="index.html" class="flex-1 border border-stone-300 py-3 px-4 rounded-md hover:bg-stone-50 transition-colors font-semibold">
+                    Voltar ao Início
+                </a>
+            </div>
+        </div>
+    </div>
 
     <footer id="main-footer" class="bg-stone-800 text-stone-300"></footer>
 

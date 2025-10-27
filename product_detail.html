@@ -18,8 +18,19 @@
     <header id="main-header" class="sticky top-0 z-40 bg-white/80 backdrop-blur-lg shadow-sm"></header>
 
     <main class="container mx-auto px-4 py-12 lg:py-16">
-        <div id="product-detail" class="w-full max-w-4xl mx-auto"></div>
+        <div id="product-detail-container" class="w-full max-w-6xl mx-auto">
+            <!-- Product details will be rendered here by JavaScript -->
+            <div class="flex justify-center items-center min-h-[50vh]">
+                <div class="loader"></div>
+            </div>
+        </div>
     </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-8 right-8 bg-green-600 text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 opacity-0 translate-y-3 transition-all duration-300 z-50">
+        <i data-lucide="check-circle" class="w-6 h-6"></i>
+        <span>Produto adicionado ao carrinho!</span>
+    </div>
 
     <footer id="main-footer" class="bg-stone-800 text-stone-300"></footer>
 
