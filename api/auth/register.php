@@ -1,46 +1,73 @@
 <?php
-require_once __DIR__ . '/../../core/Request.php';
-require_once __DIR__ . '/../../core/Response.php';
-require_once __DIR__ . '/../../models/User.php';
+// api/auth/register.php
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Content-Type: application/json; charset=utf-8");
 
-$request = new Request();
-$data = $request->body;
-
-if (empty($data['email']) || empty($data['password']) || empty($data['name'])) {
-    Response::json(['error' => 'Nome, email e senha são obrigatórios'], 400);
-}
-
-error_log('Register - Dados recebidos: ' . json_encode($data));
-
-$userModel = new User();
-error_log('Tentativa de registro - Email: ' . $data['email']);
-
-$existingUser = $userModel->findByEmail($data['email']);
-error_log('Register - Resultado da busca: ' . ($existingUser ? 'encontrado' : 'não encontrado'));
-
-if ($existingUser) {
-    error_log('Usuário encontrado: ' . print_r($existingUser, true));
-    Response::json(['error' => 'Usuário já existe'], 409);
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
     exit;
 }
 
-$hashed = password_hash($data['password'], PASSWORD_DEFAULT);
-$userData = [
-    'name' => $data['name'],
-    'email' => $data['email'],
-    'password' => $hashed,
-    'role' => 'CUSTOMER'
-];
+require_once __DIR__ . '/../../core/Database.php';
+require_once __DIR__ . '/../../models/User.php';
 
-error_log('Register - Antes de criar: ' . json_encode($userData));
+try {
+    // Obter dados do corpo da requisição
+    $input = file_get_contents('php://input');
+    error_log('Register - Raw input: ' . $input);
+    
+    $data = json_decode($input, true);
+    error_log('Register - Dados decodificados: ' . json_encode($data));
 
-$userId = $userModel->create($userData);
+    // Validar dados recebidos
+    if (empty($data['email']) || empty($data['password']) || empty($data['name'])) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Nome, email e senha são obrigatórios']);
+        exit;
+    }
 
-error_log('Register - Usuário criado com ID: ' . $userId);
+    $userModel = new User();
+    
+    // Verificar se usuário já existe
+    $existingUser = $userModel->findByEmail($data['email']);
+    
+    if ($existingUser) {
+        error_log('Register - Usuário já existe: ' . $data['email']);
+        http_response_code(409);
+        echo json_encode(['error' => 'Este email já está cadastrado']);
+        exit;
+    }
 
-// Busca o usuário recém criado para confirmar
-$newUser = $userModel->findByEmail($data['email']);
-error_log('Register - Usuário encontrado após criar: ' . json_encode($newUser));
+    // Hash da senha
+    $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
 
-// Retorna apenas o ID do usuário criado
-Response::json(['id' => $userId], 201);
+    // Criar usuário
+    $userData = [
+        'name' => $data['name'],
+        'email' => $data['email'],
+        'password' => $hashedPassword,
+        'role' => $data['role'] ?? 'CUSTOMER'
+    ];
+
+    $userId = $userModel->create($userData);
+
+    if ($userId) {
+        error_log('Register - Usuário criado com sucesso, ID: ' . $userId);
+        http_response_code(201);
+        echo json_encode([
+            'success' => true,
+            'id' => $userId,
+            'message' => 'Usuário criado com sucesso'
+        ]);
+    } else {
+        throw new Exception('Erro ao criar usuário no banco de dados');
+    }
+
+} catch (Exception $e) {
+    error_log('Register - Erro: ' . $e->getMessage());
+    error_log('Register - Stack trace: ' . $e->getTraceAsString());
+    http_response_code(500);
+    echo json_encode(['error' => 'Erro no servidor: ' . $e->getMessage()]);
+}

@@ -25,29 +25,43 @@ async function apiRequest(endpoint, method = 'GET', data = null, requiresAuth = 
 
     try {
         const response = await fetch(url, options);
+        
+        // Ler a resposta como texto primeiro
+        const responseText = await response.text();
+        
         if (!response.ok) {
-            const errorBody = await response.json().catch(() => ({ error: 'An unknown API error occurred.' }));
+            let errorBody;
+            try {
+                errorBody = JSON.parse(responseText);
+            } catch (e) {
+                errorBody = { error: 'An unknown API error occurred.' };
+            }
             const errorMessage = errorBody.error || `HTTP error! status: ${response.status}`;
             throw new Error(errorMessage);
         }
+        
         if (response.status === 204) {
             return null;
         }
-        return await response.json();
+        
+        // Parsear o JSON apenas se tiver conteúdo
+        if (responseText.trim() === '') {
+            return null;
+        }
+        
+        try {
+            return JSON.parse(responseText);
+        } catch (e) {
+            console.error('Error parsing JSON:', responseText);
+            throw new Error('Invalid JSON response from server');
+        }
     } catch (error) {
         console.error(`API request to ${url} failed:`, error);
         throw error;
     }
 }
 
-export async function login(email, password) {
-    return apiRequest('auth/login', 'POST', { email, password }, false);
-}
-
-export async function register(userData) {
-    return apiRequest('auth/register', 'POST', userData, false);
-}
-
+// Não usar apiRequest para login e register, pois eles têm lógica própria
 export async function getProducts(filters = {}) {
     const params = new URLSearchParams(filters);
     const queryString = params.toString() ? `?${params}` : '';

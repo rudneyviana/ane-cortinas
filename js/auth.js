@@ -1,4 +1,4 @@
-import { login as apiLogin, register as apiRegister } from './api.js';
+import { API_BASE_URL } from './config.js';
 
 const USER_STORAGE_KEY = 'aneCortinasUser';
 const TOKEN_STORAGE_KEY = 'aneCortinasToken';
@@ -14,24 +14,52 @@ export function getToken() {
 
 export async function login(email, password) {
     try {
-        const response = await apiLogin(email, password);
-        if (response.success && response.token) {
-            localStorage.setItem(TOKEN_STORAGE_KEY, response.token);
-            localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(response.user));
+        const url = `${API_BASE_URL}/auth/login.php`;
+        console.log('Login - URL:', url);
+        console.log('Login - Dados:', { email, password: '***' });
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password })
+        });
+
+        console.log('Login - Response status:', response.status);
+        
+        const responseText = await response.text();
+        console.log('Login - Response text:', responseText);
+
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (e) {
+            console.error('Login - Erro ao parsear JSON:', e);
+            return { success: false, message: 'Erro ao processar resposta do servidor' };
+        }
+
+        if (!response.ok) {
+            return { success: false, message: data.error || 'Email ou senha incorretos.' };
+        }
+
+        if (data.success && data.token) {
+            localStorage.setItem(TOKEN_STORAGE_KEY, data.token);
+            localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
             
             // Se for admin, redireciona para o painel admin
-            if (response.user.role === 'ADMIN') {
+            if (data.user.role === 'ADMIN') {
                 window.location.href = '/projeto_ane_cortinas/admin/';
-                return { success: true, user: response.user };
+                return { success: true, user: data.user };
             }
             
-            return { success: true, user: response.user };
+            return { success: true, user: data.user };
         } else {
-            return { success: false, message: response.error || 'Email ou senha incorretos.' };
+            return { success: false, message: data.error || 'Email ou senha incorretos.' };
         }
     } catch (error) {
         console.error("Login failed:", error);
-        return { success: false, message: error.message || 'Email ou senha incorretos.' };
+        return { success: false, message: 'Erro de conexão com o servidor' };
     }
 }
 
@@ -41,34 +69,60 @@ export function logout() {
     window.location.href = 'index.html';
 }
 
-    export async function register(userData) {
+export async function register(userData) {
     try {
-        console.log('Iniciando registro com dados:', userData);
-        const response = await apiRegister(userData);
-        console.log('Resposta do registro:', response);
+        const url = `${API_BASE_URL}/auth/register.php`;
+        console.log('Register - URL:', url);
+        console.log('Register - Dados:', { ...userData, password: '***' });
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(userData)
+        });
+
+        console.log('Register - Response status:', response.status);
         
-        if (response.id) {
-            // Se o registro foi bem sucedido, tenta fazer login diretamente
-            const loginResult = await apiLogin(userData.email, userData.password);
-            console.log('Resposta do login após registro:', loginResult);
+        const responseText = await response.text();
+        console.log('Register - Response text:', responseText);
+
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (e) {
+            console.error('Register - Erro ao parsear JSON:', e);
+            return { success: false, message: 'Erro ao processar resposta do servidor' };
+        }
+
+        if (!response.ok) {
+            return { success: false, message: data.error || 'Não foi possível criar a conta.' };
+        }
+
+        if (data.success || data.id) {
+            // Registro bem-sucedido, fazer login automático
+            const loginResult = await login(userData.email, userData.password);
             
-            if (loginResult.token) {
-                // Login bem sucedido
-                localStorage.setItem(TOKEN_STORAGE_KEY, loginResult.token);
-                localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(loginResult.user));
+            if (loginResult.success) {
                 return { success: true, user: loginResult.user };
+            } else {
+                return { 
+                    success: false, 
+                    message: 'Conta criada! Por favor, faça login.' 
+                };
             }
         }
         
         return { 
             success: false, 
-            message: response.error || 'Registro bem sucedido, mas não foi possível fazer login automático. Por favor, tente fazer login manualmente.' 
+            message: data.error || 'Não foi possível criar a conta.' 
         };
     } catch (error) {
         console.error("Registration failed:", error);
         return { 
             success: false, 
-            message: error.message || 'Não foi possível criar a conta.' 
+            message: 'Erro de conexão com o servidor' 
         };
     }
 }
