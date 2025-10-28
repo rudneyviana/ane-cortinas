@@ -1,4 +1,5 @@
-const BASE_URL = '../api';
+const PROJECT_BASE = '/projeto_ane_cortinas_v3';
+const BASE_URL = '/projeto_ane_cortinas_v3/api';
 
 const request = async (endpoint, options = {}) => {
     const url = `${BASE_URL}/${endpoint}`;
