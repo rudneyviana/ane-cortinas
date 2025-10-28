@@ -1,4 +1,4 @@
-const BASE_URL = 'api'; 
+const BASE_URL = '../api';
 
 const request = async (endpoint, options = {}) => {
     const url = `${BASE_URL}/${endpoint}`;
