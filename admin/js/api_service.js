@@ -1,67 +1,33 @@
-const PROJECT_BASE = '/projeto_ane_cortinas_v3';
 const BASE_URL = '/projeto_ane_cortinas_v3/api';
 
-const request = async (endpoint, options = {}) => {
-    const url = `${BASE_URL}/${endpoint}`;
-    const token = localStorage.getItem('jwt_token');
+async function request(endpoint, options = {}) {
+  const url = `${BASE_URL}/${endpoint}`;
+  const headers = options.headers ? { ...options.headers } : {};
+  if (!(options.body instanceof FormData)) headers['Content-Type'] = 'application/json';
 
-    const headers = {
-        'Accept': 'application/json',
-        ...options.headers,
-    };
+  const config = {
+    method: options.method || 'GET',
+    headers,
+    body: options.body instanceof FormData ? options.body : (options.body ? JSON.stringify(options.body) : undefined),
+  };
 
-    if (!(options.body instanceof FormData)) {
-        headers['Content-Type'] = 'application/json';
-    }
+  const resp = await fetch(url, config).catch(err => {
+    console.error('Fetch failed:', err);
+    throw err;
+  });
 
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const config = {
-        ...options,
-        headers,
-    };
-    
-    if (config.body && typeof config.body !== 'string' && !(config.body instanceof FormData)) {
-        config.body = JSON.stringify(config.body);
-    }
-
-    try {
-        const response = await fetch(url, config);
-        
-        if (response.status === 204) { // No Content
-            return null;
-        }
-
-        const responseData = await response.json();
-
-        if (!response.ok) {
-            let errorMessage = `API Error: ${response.statusText}`;
-            if (responseData && responseData.error) {
-                errorMessage = responseData.error;
-            } else if (responseData && responseData.message) {
-                errorMessage = responseData.message;
-            }
-            throw new Error(errorMessage);
-        }
-
-        return responseData;
-    } catch (error) {
-        console.error(`API request failed: ${error.message}`);
-        throw error;
-    }
-};
+  if (resp.status === 204) return null;
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok) {
+    const err = new Error(data?.message || `Request failed: ${resp.status}`);
+    err.status = resp.status;
+    err.data = data;
+    throw err;
+  }
+  return data;
+}
 
 export const get = (endpoint) => request(endpoint, { method: 'GET' });
-
 export const post = (endpoint, body) => request(endpoint, { method: 'POST', body });
-
 export const put = (endpoint, body) => request(endpoint, { method: 'PUT', body });
-
 export const del = (endpoint) => request(endpoint, { method: 'DELETE' });
-
-export const postWithFile = (endpoint, formData) => request(endpoint, {
-    method: 'POST',
-    body: formData,
-});

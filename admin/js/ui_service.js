@@ -1,83 +1,43 @@
-let modalElement = null;
-
-export function showToast(message, type = 'success') {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
-
-    const bgColor = type === 'success' ? 'bg-green-500' : (type === 'error' ? 'bg-red-500' : 'bg-blue-500');
-    const icon = type === 'success' ? 'check-circle' : (type === 'error' ? 'alert-circle' : 'info');
-
-    const toast = document.createElement('div');
-    toast.className = `flex items-center text-white p-4 rounded-lg shadow-lg ${bgColor} toast-enter`;
-    toast.innerHTML = `
-        <i data-lucide="${icon}" class="w-6 h-6 mr-3"></i>
-        <span>${message}</span>
-    `;
-
-    container.appendChild(toast);
-    lucide.createIcons();
-
-    requestAnimationFrame(() => {
-        toast.classList.add('toast-enter-active');
-    });
-
-    setTimeout(() => {
-        toast.classList.remove('toast-enter-active');
-        toast.classList.add('toast-exit');
-        toast.addEventListener('transitionend', () => toast.remove());
-    }, 3000);
+// Minimal UI helpers
+export function renderSpinner(container) {
+  container.innerHTML = `
+    <div class="flex items-center justify-center py-16">
+      <svg class="animate-spin h-6 w-6 mr-2" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" fill="none" stroke-width="4"></circle>
+      </svg>
+      <span>Carregando...</span>
+    </div>`;
 }
 
-export function showModal(title, contentHtml, footerHtml) {
-    closeModal();
-    const container = document.getElementById('modal-container');
-    if (!container) return;
+export function showToast(message, type = 'success') {
+  console.log(`[${type.toUpperCase()}] ${message}`);
+}
 
-    modalElement = document.createElement('div');
-    modalElement.className = 'modal-backdrop';
-    modalElement.id = 'dynamic-modal';
-
-    modalElement.innerHTML = `
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 transform transition-all" onclick="event.stopPropagation()">
-            <div class="flex justify-between items-center p-4 border-b">
-                <h3 class="text-xl font-semibold text-gray-800">${title}</h3>
-                <button id="modal-close-btn" class="text-gray-400 hover:text-gray-600">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
-            </div>
-            <div class="p-6">${contentHtml}</div>
-            <div class="flex justify-end p-4 bg-gray-50 border-t rounded-b-lg">
-                ${footerHtml}
-            </div>
-        </div>
-    `;
-
-    container.appendChild(modalElement);
-    lucide.createIcons();
-
-    modalElement.querySelector('#modal-close-btn').addEventListener('click', closeModal);
-    modalElement.addEventListener('click', (e) => {
-        if (e.target.id === 'dynamic-modal') {
-            closeModal();
-        }
-    });
+let _modal;
+export function showModal({ title = 'Info', contentHtml = '', footerHtml = '' } = {}) {
+  closeModal();
+  _modal = document.createElement('div');
+  _modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center p-4';
+  _modal.innerHTML = `
+    <div class="bg-white rounded shadow-lg w-full max-w-lg">
+      <div class="flex justify-between items-center p-4 border-b">
+        <h3 class="font-semibold text-lg">${title}</h3>
+        <button id="modal-close-btn" class="p-1">&times;</button>
+      </div>
+      <div class="p-4">${contentHtml}</div>
+      <div class="p-4 border-t text-right">${footerHtml}</div>
+    </div>`;
+  _modal.addEventListener('click', (e) => {
+    if (e.target === _modal) closeModal();
+  });
+  document.body.appendChild(_modal);
+  const btn = document.getElementById('modal-close-btn');
+  if (btn) btn.addEventListener('click', closeModal);
 }
 
 export function closeModal() {
-    if (modalElement) {
-        modalElement.remove();
-        modalElement = null;
-    }
-}
-
-export function renderSpinner(container) {
-    if (container) {
-        container.innerHTML = `<div class="flex justify-center items-center p-10"><div class="spinner"></div></div>`;
-    }
-}
-
-export function clearContainer(container) {
-    if (container) {
-        container.innerHTML = '';
-    }
+  if (_modal && _modal.parentNode) {
+    _modal.parentNode.removeChild(_modal);
+  }
+  _modal = null;
 }
