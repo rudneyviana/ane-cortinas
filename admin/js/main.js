@@ -19,13 +19,25 @@ function renderAdminLayout() {
           <i data-lucide="diamonds" class="w-6 h-6"></i>
           DecorAdmin
         </div>
-        <nav class="mt-4 flex flex-col">
-          <a data-admin-link href="#dashboard" class="px-4 py-3 hover:bg-sky-700">Dashboard</a>
-          <a data-admin-link href="#categories" class="px-4 py-3 hover:bg-sky-700">Categories</a>
-          <a data-admin-link href="#products" class="px-4 py-3 hover:bg-sky-700">Products</a>
-          <a data-admin-link href="#fabrics" class="px-4 py-3 hover:bg-sky-700">Stock / Fabrics</a>
-          <a data-admin-link href="#orders" class="px-4 py-3 hover:bg-sky-700">Orders</a>
-          <a data-admin-link href="#customers" class="px-4 py-3 hover:bg-sky-700">Clientes</a>
+        <nav class="flex-1 px-2 py-4 space-y-1">
+          <a href="#dashboard" class="flex items-center px-4 py-2 rounded-md font-medium text-sky-100 hover:bg-sky-700">
+            <i data-lucide="home" class="mr-3 h-6 w-6"></i> Dashboard
+          </a>
+          <a href="#categories" class="flex items-center px-4 py-2 rounded-md font-medium text-sky-100 hover:bg-sky-700">
+              <i data-lucide="layout-grid" class="mr-3 h-6 w-6"></i> Categories
+          </a>
+          <a href="#products" class="flex items-center px-4 py-2 rounded-md font-medium text-sky-100 hover:bg-sky-700">
+              <i data-lucide="package" class="mr-3 h-6 w-6"></i> Products
+          </a>
+          <a href="#fabrics" class="flex items-center px-4 py-2 rounded-md font-medium text-sky-100 hover:bg-sky-700">
+              <i data-lucide="layers" class="mr-3 h-6 w-6"></i> Stock / Fabrics
+          </a>
+          <a href="#orders" class="flex items-center px-4 py-2 rounded-md font-medium text-sky-100 hover:bg-sky-700">
+              <i data-lucide="shopping-cart" class="mr-3 h-6 w-6"></i> Orders
+          </a>
+          <a href="#customers" class="flex items-center px-4 py-2 rounded-md font-medium text-sky-100 hover:bg-sky-700">
+              <i data-lucide="users" class="mr-3 h-6 w-6"></i> Customers
+          </a>
         </nav>
       </aside>
 
