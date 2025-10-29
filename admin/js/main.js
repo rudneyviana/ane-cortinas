@@ -24,19 +24,19 @@ function renderAdminLayout() {
             <i data-lucide="home" class="mr-3 h-6 w-6"></i> Dashboard
           </a>
           <a href="#categories" class="flex items-center px-4 py-2 rounded-md font-medium text-sky-100 hover:bg-sky-700">
-              <i data-lucide="layout-grid" class="mr-3 h-6 w-6"></i> Categories
+              <i data-lucide="layout-grid" class="mr-3 h-6 w-6"></i> Categorias
           </a>
           <a href="#products" class="flex items-center px-4 py-2 rounded-md font-medium text-sky-100 hover:bg-sky-700">
-              <i data-lucide="package" class="mr-3 h-6 w-6"></i> Products
+              <i data-lucide="package" class="mr-3 h-6 w-6"></i> Produtos
           </a>
           <a href="#fabrics" class="flex items-center px-4 py-2 rounded-md font-medium text-sky-100 hover:bg-sky-700">
-              <i data-lucide="layers" class="mr-3 h-6 w-6"></i> Stock / Fabrics
+              <i data-lucide="layers" class="mr-3 h-6 w-6"></i> Estoque de Tecidos
           </a>
           <a href="#orders" class="flex items-center px-4 py-2 rounded-md font-medium text-sky-100 hover:bg-sky-700">
-              <i data-lucide="shopping-cart" class="mr-3 h-6 w-6"></i> Orders
+              <i data-lucide="shopping-cart" class="mr-3 h-6 w-6"></i> Pedidos
           </a>
           <a href="#customers" class="flex items-center px-4 py-2 rounded-md font-medium text-sky-100 hover:bg-sky-700">
-              <i data-lucide="users" class="mr-3 h-6 w-6"></i> Customers
+              <i data-lucide="users" class="mr-3 h-6 w-6"></i> Clientes
           </a>
         </nav>
       </aside>
