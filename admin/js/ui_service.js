@@ -10,34 +10,37 @@ export function renderSpinner(container) {
 }
 
 export function showToast(message, type = 'success') {
-  console.log(`[${type.toUpperCase()}] ${message}`);
+  const host = document.getElementById('toast-container') || document.body;
+  const el = document.createElement('div');
+  el.className = `px-3 py-2 rounded shadow text-white mb-2 ${type === 'error' ? 'bg-red-600' : 'bg-emerald-600'}`;
+  el.textContent = message;
+  host.appendChild(el);
+  setTimeout(() => el.remove(), 2500);
 }
 
-let _modal;
-export function showModal({ title = 'Info', contentHtml = '', footerHtml = '' } = {}) {
+let _modal = null;
+
+export function showModal({ title = '', contentHtml = '', footerHtml = '' }) {
   closeModal();
   _modal = document.createElement('div');
-  _modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center p-4';
+  _modal.className = 'fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4';
   _modal.innerHTML = `
-    <div class="bg-white rounded shadow-lg w-full max-w-lg">
-      <div class="flex justify-between items-center p-4 border-b">
-        <h3 class="font-semibold text-lg">${title}</h3>
-        <button id="modal-close-btn" class="p-1">&times;</button>
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-lg">
+      <div class="px-5 py-4 border-b flex items-center justify-between">
+        <h3 class="font-semibold">${title || ''}</h3>
+        <button id="modal-close-btn" class="text-stone-500 hover:text-stone-800">&times;</button>
       </div>
-      <div class="p-4">${contentHtml}</div>
-      <div class="p-4 border-t text-right">${footerHtml}</div>
+      <div class="p-5">${contentHtml || ''}</div>
+      <div class="px-5 py-4 border-t text-right">${footerHtml || ''}</div>
     </div>`;
   _modal.addEventListener('click', (e) => {
     if (e.target === _modal) closeModal();
   });
   document.body.appendChild(_modal);
-  const btn = document.getElementById('modal-close-btn');
-  if (btn) btn.addEventListener('click', closeModal);
+  document.getElementById('modal-close-btn')?.addEventListener('click', closeModal);
 }
 
 export function closeModal() {
-  if (_modal && _modal.parentNode) {
-    _modal.parentNode.removeChild(_modal);
-  }
+  if (_modal && _modal.parentNode) _modal.parentNode.removeChild(_modal);
   _modal = null;
 }

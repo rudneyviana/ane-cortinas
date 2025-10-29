@@ -1,49 +1,52 @@
-// Simple hash-based router for the Admin
-import * as dashboardView from './views/dashboard.js';
-import * as categoriesView from './views/categories.js';
-import * as productsView from './views/products.js';
-import * as fabricsView from './views/fabrics.js';
-import * as ordersView from './views/orders.js';
-import * as customersView from './views/customers.js';
-
-const routes = {
-  '': dashboardView,
-  '#dashboard': dashboardView,
-  '#categories': categoriesView,
-  '#products': productsView,
-  '#fabrics': fabricsView,
-  '#orders': ordersView,
-  '#customers': customersView,
+// Simple hash-based router for the Admin (lazy-load views)
+const routeLoaders = {
+  '': () => import('./views/dashboard.js'),
+  '#dashboard': () => import('./views/dashboard.js'),
+  '#categories': () => import('./views/categories.js'),
+  '#products': () => import('./views/products.js'),
+  '#fabrics': () => import('./views/fabrics.js'),
+  '#orders': () => import('./views/orders.js'),
+  '#customers': () => import('./views/customers.js'),
 };
 
+function getCurrentHash() {
+  return window.location.hash || '#dashboard';
+}
+
 function updateActiveSidebarLink() {
-  const current = window.location.hash || '#dashboard';
-  document.querySelectorAll('[data-admin-link]').forEach(a => {
-    if (a.getAttribute('href') === current) {
-      a.classList.add('bg-sky-700', 'text-white');
-      a.classList.remove('text-sky-100');
-    } else {
-      a.classList.remove('bg-sky-700', 'text-white');
-      a.classList.add('text-sky-100');
-    }
+  const current = getCurrentHash();
+  document.querySelectorAll('a[data-route]').forEach(a => {
+    const isActive = a.getAttribute('href') === current;
+    a.classList.toggle('bg-amber-50', isActive);
+    a.classList.toggle('text-amber-800', isActive);
+    a.classList.toggle('text-stone-200', !isActive);
   });
 }
 
-export function router() {
-  const hash = window.location.hash || '#dashboard';
-  const view = routes[hash] || dashboardView;
+async function router() {
+  const hash = getCurrentHash();
+  const loader = routeLoaders[hash];
   const root = document.getElementById('content-root');
   if (!root) return;
-  // Clear and render the selected view
-  root.innerHTML = '';
-  if (view && typeof view.init === 'function') {
-    view.init(root);
-  } else {
-    root.innerHTML = '<div class="p-6 text-red-600">View not found.</div>';
+
+  if (!loader) {
+    root.innerHTML = '<p class="text-red-600">View not found.</p>';
+    updateActiveSidebarLink();
+    return;
   }
-  if (window.lucide && window.lucide.createIcons) {
-    window.lucide.createIcons();
+
+  try {
+    const mod = await loader();
+    if (!mod || (typeof mod.render !== 'function' && typeof mod.init !== 'function')) {
+      root.innerHTML = '<p class="text-red-600">View not found.</p>';
+    } else {
+      const fn = mod.render || mod.init; await fn(root);
+    }
+  } catch (err) {
+    console.error(err);
+    root.innerHTML = '<div class="p-4 text-red-600">Falha ao carregar a view.</div>';
   }
+  if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
   updateActiveSidebarLink();
 }
 

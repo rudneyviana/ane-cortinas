@@ -1,25 +1,20 @@
 const BASE_URL = '/projeto_ane_cortinas_v3/api';
 
-async function request(endpoint, options = {}) {
-  const url = `${BASE_URL}/${endpoint}`;
-  const headers = options.headers ? { ...options.headers } : {};
-  if (!(options.body instanceof FormData)) headers['Content-Type'] = 'application/json';
+async function request(endpoint, { method = 'GET', body } = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  const opts = { method, headers };
+  if (body !== undefined) opts.body = JSON.stringify(body);
 
-  const config = {
-    method: options.method || 'GET',
-    headers,
-    body: options.body instanceof FormData ? options.body : (options.body ? JSON.stringify(options.body) : undefined),
-  };
-
-  const resp = await fetch(url, config).catch(err => {
-    console.error('Fetch failed:', err);
-    throw err;
-  });
+  const url = `${BASE_URL}/${endpoint}`.replace(/\/+$/, '').replace(/([^:]\/)\/+/, '$1/');
+  const resp = await fetch(url, opts);
 
   if (resp.status === 204) return null;
-  const data = await resp.json().catch(() => ({}));
+  let data = null;
+  try { data = await resp.json(); } catch (_) { data = null; }
+
   if (!resp.ok) {
-    const err = new Error(data?.message || `Request failed: ${resp.status}`);
+    const msg = (data && (data.error || data.message)) || `Request failed: ${resp.status}`;
+    const err = new Error(msg);
     err.status = resp.status;
     err.data = data;
     throw err;
@@ -31,3 +26,5 @@ export const get = (endpoint) => request(endpoint, { method: 'GET' });
 export const post = (endpoint, body) => request(endpoint, { method: 'POST', body });
 export const put = (endpoint, body) => request(endpoint, { method: 'PUT', body });
 export const del = (endpoint) => request(endpoint, { method: 'DELETE' });
+
+export default { get, post, put, del };
