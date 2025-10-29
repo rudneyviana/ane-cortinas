@@ -7,7 +7,7 @@ const TRY_ENDPOINTS = ['categories', 'categorias']; // fallback pt/en
 let BASE = null; // endpoint autodetectado
 
 function icon(name, cls = 'w-4 h-4') {
-  return `<i data-lucide="\${name}" class="\${cls}"></i>`;
+  return `<i data-lucide="${name}" class="${cls}"></i>`;
 }
 
 function normalizeCategory(c) {
@@ -23,10 +23,10 @@ function thSort(label, key, currentSort) {
   const isActive = currentSort.key === key;
   const dirIcon = currentSort.dir === 'asc' ? 'arrow-up' : 'arrow-down';
   return `
-    <th data-sort="\${key}" class="px-4 py-3 text-left text-sm font-semibold text-gray-700 select-none cursor-pointer">
+    <th data-sort="${key}" class="px-4 py-3 text-left text-sm font-semibold text-gray-700 select-none cursor-pointer">
       <div class="inline-flex items-center gap-1">
-        <span>\${label}</span>
-        \${isActive ? icon(dirIcon) : ''}
+        <span>${label}</span>
+        ${isActive ? icon(dirIcon) : ''}
       </div>
     </th>`;
 }
@@ -35,15 +35,15 @@ function row(c) {
   const canDelete = (c.total_products || 0) === 0;
   return `
   <tr class="border-b last:border-b-0">
-    <td class="px-4 py-3 font-medium text-gray-800">\${c.name || '-'}</td>
-    <td class="px-4 py-3 text-gray-700">\${c.description ? c.description : '-'}</td>
-    <td class="px-4 py-3 text-gray-700">\${c.total_products ?? 0}</td>
+    <td class="px-4 py-3 font-medium text-gray-800">${c.name || '-'}</td>
+    <td class="px-4 py-3 text-gray-700">${c.description ? c.description : '-'}</td>
+    <td class="px-4 py-3 text-gray-700">${c.total_products ?? 0}</td>
     <td class="px-4 py-3 text-right">
-      <button class="text-sky-700 mr-3" data-edit="\${c.id}" title="Editar">\${icon('square-pen')}</button>
-      <button class="\${canDelete ? 'text-red-600' : 'text-gray-400 cursor-not-allowed'}"
-              \${canDelete ? `data-del="\${c.id}"` : 'disabled'}
-              title="\${canDelete ? 'Excluir' : 'Não é possível excluir: possui produtos'}">
-        \${icon('trash-2')}
+      <button class="text-sky-700 mr-3" data-edit="${c.id}" title="Editar">${icon('square-pen')}</button>
+      <button class="${canDelete ? 'text-red-600' : 'text-gray-400 cursor-not-allowed'}"
+              ${canDelete ? `data-del="${c.id}"` : 'disabled'}
+              title="${canDelete ? 'Excluir' : 'Não é possível excluir: possui produtos'}">
+        ${icon('trash-2')}
       </button>
     </td>
   </tr>`;
@@ -53,15 +53,15 @@ function formHTML(cat = null) {
   const name = cat?.name ?? '';
   return `
     <form id="cat-form" class="space-y-4">
-      <input type="hidden" name="id" value="\${cat?.id ?? ''}">
+      <input type="hidden" name="id" value="${cat?.id ?? ''}">
       <div>
         <label class="block text-sm font-medium text-gray-700">Nome</label>
-        <input name="name" value="\${name}" required maxlength="60"
+        <input name="name" value="${name}" required maxlength="60"
                class="mt-1 block w-full rounded border-gray-300" placeholder="Ex.: Cortinas">
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Descrição (opcional)</label>
-        <input name="description" value="\${cat?.description ?? ''}" maxlength="120"
+        <input name="description" value="${cat?.description ?? ''}" maxlength="120"
                class="mt-1 block w-full rounded border-gray-300" placeholder="Texto curto" disabled>
         <p class="text-xs text-gray-500 mt-1">Obs.: o backend atual só grava o nome; descrição é futura.</p>
       </div>
@@ -132,12 +132,12 @@ function renderTable(container, data) {
         </td>
       </tr>`;
 
-    counter.textContent = `\${total} \${total === 1 ? 'categoria' : 'categorias'}`;
+    counter.textContent = `${total} ${total === 1 ? 'categoria' : 'categorias'}`;
     pager.innerHTML = `
       <div class="inline-flex items-center gap-2">
-        <button class="px-2 py-1 rounded border \${state.page <= 1 ? 'opacity-50 cursor-not-allowed' : ''}" data-page="prev">Anterior</button>
-        <span class="text-sm">Página \${state.page} de \${pages}</span>
-        <button class="px-2 py-1 rounded border \${state.page >= pages ? 'opacity-50 cursor-not-allowed' : ''}" data-page="next">Próxima</button>
+        <button class="px-2 py-1 rounded border ${state.page <= 1 ? 'opacity-50 cursor-not-allowed' : ''}" data-page="prev">Anterior</button>
+        <span class="text-sm">Página ${state.page} de ${pages}</span>
+        <button class="px-2 py-1 rounded border ${state.page >= pages ? 'opacity-50 cursor-not-allowed' : ''}" data-page="next">Próxima</button>
       </div>
     `;
 
@@ -174,9 +174,9 @@ function renderTable(container, data) {
         state.sort.dir = 'asc';
       }
       container.querySelector('#thead').innerHTML = `
-        \${thSort('Nome', 'name', state.sort)}
-        \${thSort('Descrição', 'description', state.sort)}
-        \${thSort('# Produtos', 'total_products', state.sort)}
+        ${thSort('Nome', 'name', state.sort)}
+        ${thSort('Descrição', 'description', state.sort)}
+        ${thSort('# Produtos', 'total_products', state.sort)}
         <th class="px-4 py-3 text-right text-sm font-semibold text-gray-700">Ações</th>
       `;
       container.querySelectorAll('th[data-sort]').forEach(th2 => th2.addEventListener('click', th.click));
@@ -223,7 +223,7 @@ function openFormModal(container, state, cat = null) {
     try {
       const base = await detectBaseEndpoint();
       if (id) {
-        await api.put(`\${base}/\${id}`, { name });
+        await api.put(`${base}/${id}`, { name });
         showToast('Categoria atualizada com sucesso!', 'success');
       } else {
         await api.post(base, { name });
@@ -243,7 +243,7 @@ function confirmDelete(container, state, id) {
     title: 'Excluir categoria',
     contentHtml: `
       <div class="space-y-3">
-        <p>Tem certeza que deseja excluir <strong>\${cat?.name ?? 'esta categoria'}</strong>?</p>
+        <p>Tem certeza que deseja excluir <strong>${cat?.name ?? 'esta categoria'}</strong>?</p>
         <p class="text-sm text-gray-600">Esta ação não pode ser desfeita.</p>
       </div>
     `,
@@ -257,7 +257,7 @@ function confirmDelete(container, state, id) {
   document.getElementById('btn-confirm')?.addEventListener('click', async () => {
     try {
       const base = await detectBaseEndpoint();
-      await api.del(`\${base}/\${id}`);
+      await api.del(`${base}/${id}`);
       closeModal();
       showToast('Categoria excluída.', 'success');
       await reloadAndRender(container, state);
@@ -292,9 +292,9 @@ async function reloadAndRender(container, state) {
     <table class="min-w-full">
       <thead id="thead" class="bg-gray-50">
         <tr>
-          \${thSort('Nome', 'name', { key: 'name', dir: 'asc' })}
-          \${thSort('Descrição', 'description', { key: 'name', dir: 'asc' })}
-          \${thSort('# Produtos', 'total_products', { key: 'name', dir: 'asc' })}
+          ${thSort('Nome', 'name', { key: 'name', dir: 'asc' })}
+          ${thSort('Descrição', 'description', { key: 'name', dir: 'asc' })}
+          ${thSort('# Produtos', 'total_products', { key: 'name', dir: 'asc' })}
           <th class="px-4 py-3 text-right text-sm font-semibold text-gray-700">Ações</th>
         </tr>
       </thead>
@@ -312,14 +312,14 @@ export async function render(container) {
     <div class="flex items-center justify-between mb-6">
       <h1 class="text-2xl font-bold text-gray-800">Categorias</h1>
       <button id="btn-new" class="inline-flex items-center gap-2 px-4 py-2 rounded bg-amber-600 text-white hover:bg-amber-700 transition">
-        \${icon('plus')} <span>Nova Categoria</span>
+        ${icon('plus')} <span>Nova Categoria</span>
       </button>
     </div>
 
     <div class="bg-white rounded-xl border shadow-sm">
       <div class="p-4 border-b flex flex-wrap items-center gap-3">
         <div class="relative flex-1 min-w-[240px] max-w-[420px]">
-          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">\${icon('search')}</span>
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">${icon('search')}</span>
           <input id="search-input" class="pl-10 pr-3 py-2 w-full rounded border-gray-300" placeholder="Buscar por nome ou descrição...">
         </div>
         <div class="ml-auto text-sm text-gray-600">
@@ -345,9 +345,9 @@ export async function render(container) {
       <table class="min-w-full">
         <thead id="thead" class="bg-gray-50">
           <tr>
-            \${thSort('Nome', 'name', { key: 'name', dir: 'asc' })}
-            \${thSort('Descrição', 'description', { key: 'name', dir: 'asc' })}
-            \${thSort('# Produtos', 'total_products', { key: 'name', dir: 'asc' })}
+            ${thSort('Nome', 'name', { key: 'name', dir: 'asc' })}
+            ${thSort('Descrição', 'description', { key: 'name', dir: 'asc' })}
+            ${thSort('# Produtos', 'total_products', { key: 'name', dir: 'asc' })}
             <th class="px-4 py-3 text-right text-sm font-semibold text-gray-700">Ações</th>
           </tr>
         </thead>
@@ -356,7 +356,7 @@ export async function render(container) {
     `;
     renderTable(container, list);
   } catch (err) {
-    holder.innerHTML = `<div class="p-6 text-red-600">Falha ao carregar categorias. \${err?.message || ''}</div>`;
+    holder.innerHTML = `<div class="p-6 text-red-600">Falha ao carregar categorias. ${err?.message || ''}</div>`;
   }
 
   container.querySelector('#btn-new')?.addEventListener('click', () => {
