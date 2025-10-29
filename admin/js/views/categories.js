@@ -50,6 +50,7 @@ function row(c) {
 }
 
 function formHTML(cat = null) {
+  const title = cat ? 'Editar Categoria' : 'Nova Categoria';
   const name = cat?.name ?? '';
   return `
     <form id="cat-form" class="space-y-4">
@@ -59,6 +60,7 @@ function formHTML(cat = null) {
         <input name="name" value="${name}" required maxlength="60"
                class="mt-1 block w-full rounded border-gray-300" placeholder="Ex.: Cortinas">
       </div>
+      <!-- Mantemos o campo somente no front (back atual só usa 'name'); deixo aqui desabilitado para evitar erro -->
       <div>
         <label class="block text-sm font-medium text-gray-700">Descrição (opcional)</label>
         <input name="description" value="${cat?.description ?? ''}" maxlength="120"
@@ -73,8 +75,13 @@ function formHTML(cat = null) {
 async function detectBaseEndpoint() {
   if (BASE) return BASE;
   for (const e of TRY_ENDPOINTS) {
-    try { await api.get(e); BASE = e; return BASE; } catch (_) {}
+    try {
+      await api.get(e);
+      BASE = e;
+      return BASE;
+    } catch (_) { /* tenta o próximo */ }
   }
+  // fallback padrão
   BASE = 'categories';
   return BASE;
 }
@@ -141,8 +148,10 @@ function renderTable(container, data) {
       </div>
     `;
 
+    // Ícones
     if (window.lucide?.createIcons) window.lucide.createIcons();
 
+    // Ações linha
     tbody.querySelectorAll('[data-edit]').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-edit');
@@ -158,12 +167,14 @@ function renderTable(container, data) {
     });
   }
 
+  // Busca
   container.querySelector('#search-input').addEventListener('input', (e) => {
     state.search = e.target.value;
     state.page = 1;
     renderRows();
   });
 
+  // Ordenação
   container.querySelectorAll('th[data-sort]').forEach(th => {
     th.addEventListener('click', () => {
       const key = th.getAttribute('data-sort');
@@ -173,17 +184,20 @@ function renderTable(container, data) {
         state.sort.key = key;
         state.sort.dir = 'asc';
       }
+      // re-render cabeçalho para refletir ícone
       container.querySelector('#thead').innerHTML = `
         ${thSort('Nome', 'name', state.sort)}
         ${thSort('Descrição', 'description', state.sort)}
         ${thSort('# Produtos', 'total_products', state.sort)}
         <th class="px-4 py-3 text-right text-sm font-semibold text-gray-700">Ações</th>
       `;
+      // rebind
       container.querySelectorAll('th[data-sort]').forEach(th2 => th2.addEventListener('click', th.click));
       renderRows();
     });
   });
 
+  // Paginação
   pager.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-page]');
     if (!btn) return;
@@ -218,6 +232,7 @@ function openFormModal(container, state, cat = null) {
       showToast('O nome deve ter pelo menos 2 caracteres.', 'error');
       return;
     }
+    // Normalização
     name = name.replace(/\s+/g, ' ');
 
     try {
@@ -274,6 +289,7 @@ async function fetchCategories() {
     const list = await api.get(base);
     return Array.isArray(list) ? list.map(normalizeCategory) : [];
   } catch (err) {
+    // fallback extra se o servidor tiver outra rota legada
     try {
       const alt = await api.get('categorias');
       return Array.isArray(alt) ? alt.map(normalizeCategory) : [];
@@ -288,6 +304,7 @@ async function reloadAndRender(container, state) {
   renderSpinner(holder);
   const list = await fetchCategories();
   state.list = list;
+  // limpa e redesenha tabela
   holder.innerHTML = `
     <table class="min-w-full">
       <thead id="thead" class="bg-gray-50">
@@ -301,8 +318,11 @@ async function reloadAndRender(container, state) {
       <tbody id="tbody" class="bg-white"></tbody>
     </table>
   `;
+  // rebind sort após recarregar
   container.querySelectorAll('th[data-sort]').forEach(th => {
-    th.addEventListener('click', () => {});
+    th.addEventListener('click', () => {
+      // evento será reatribuído em renderTable()
+    });
   });
   renderTable(container, list);
 }
@@ -341,6 +361,8 @@ export async function render(container) {
   try {
     await detectBaseEndpoint();
     const list = await fetchCategories();
+
+    // monta tabela inicial + controles
     holder.innerHTML = `
       <table class="min-w-full">
         <thead id="thead" class="bg-gray-50">
@@ -354,12 +376,17 @@ export async function render(container) {
         <tbody id="tbody" class="bg-white"></tbody>
       </table>
     `;
+
+    // inicia renderizador com busca/ordenação/página
     renderTable(container, list);
+
   } catch (err) {
     holder.innerHTML = `<div class="p-6 text-red-600">Falha ao carregar categorias. ${err?.message || ''}</div>`;
   }
 
+  // criar/editar
   container.querySelector('#btn-new')?.addEventListener('click', () => {
+    // state é criado dentro de renderTable; criamos um state mínimo só para reload
     const state = { list: [] };
     openFormModal(container, state, null);
   });
