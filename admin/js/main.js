@@ -1,4 +1,4 @@
-// Main bootstrap for Admin. No login barrier (bypass auth for demo).
+// Main bootstrap for Admin. No login barrier (bypass auth).
 import * as router from './router.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -25,7 +25,7 @@ function renderAdminLayout() {
           <a data-admin-link href="#products" class="px-4 py-3 hover:bg-sky-700">Products</a>
           <a data-admin-link href="#fabrics" class="px-4 py-3 hover:bg-sky-700">Stock / Fabrics</a>
           <a data-admin-link href="#orders" class="px-4 py-3 hover:bg-sky-700">Orders</a>
-          <a data-admin-link href="#customers" class="px-4 py-3 hover:bg-sky-700">Customers</a>
+          <a data-admin-link href="#customers" class="px-4 py-3 hover:bg-sky-700">Clientes</a>
         </nav>
       </aside>
 
