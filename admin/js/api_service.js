@@ -1,4 +1,4 @@
-const BASE_URL = '/projeto_ane_cortinas_v3/api';
+const BASE_URL = '/ane-cortinas/api';
 
 async function request(endpoint, { method = 'GET', body } = {}) {
   const headers = { 'Content-Type': 'application/json' };

@@ -296,15 +296,15 @@ LOCK TABLES `product_images` WRITE;
 /*!40000 ALTER TABLE `product_images` DISABLE KEYS */;
 
 INSERT INTO `product_images` (`id`,`product_id`,`image_url`,`alt_text`,`sort_order`) VALUES
-(1, 1, '/projeto_ane_cortinas_v3/images/Cortina%20Elegance%20Bege%20em%20sala%20de%20estar.png', 'Cortina Elegance Bege em sala de estar', 0),
-(2, 2, '/projeto_ane_cortinas_v3/images/Cortina%20Blackout%20Premium%20em%20quarto.png', 'Cortina Blackout Premium em quarto', 0),
-(3, 3, '/projeto_ane_cortinas_v3/images/Cortina%20Veludo%20Luxo%20em%20ambiente%20cl%C3%A1ssico.png', 'Cortina Veludo Luxo em ambiente clássico', 0),
-(4, 4, '/projeto_ane_cortinas_v3/images/Cortina%20Voil%20Transparente%20em%20janela.png', 'Cortina Voil Transparente em janela', 0),
-(5, 5, '/projeto_ane_cortinas_v3/images/Almofada%20Decorativa%20Terracota.png', 'Almofada Decorativa Terracota', 0),
-(6, 6, '/projeto_ane_cortinas_v3/images/Almofada%20Veludo%20Cinza.png', 'Almofada Veludo Cinza', 0),
-(7, 7, '/projeto_ane_cortinas_v3/images/Almofada%20Bordada%20Verde.png', 'Almofada Bordada Verde', 0),
-(8, 8, '/projeto_ane_cortinas_v3/images/Pingente%20Decorativo%20Dourado.png', 'Pingente Decorativo Dourado', 0),
-(9, 9, '/projeto_ane_cortinas_v3/images/Pingente%20Cristal%20Premium.png', 'Pingente Cristal Premium', 0);
+(1, 1, '/ane-cortinas/images/Cortina%20Elegance%20Bege%20em%20sala%20de%20estar.png', 'Cortina Elegance Bege em sala de estar', 0),
+(2, 2, '/ane-cortinas/images/Cortina%20Blackout%20Premium%20em%20quarto.png', 'Cortina Blackout Premium em quarto', 0),
+(3, 3, '/ane-cortinas/images/Cortina%20Veludo%20Luxo%20em%20ambiente%20cl%C3%A1ssico.png', 'Cortina Veludo Luxo em ambiente clássico', 0),
+(4, 4, '/ane-cortinas/images/Cortina%20Voil%20Transparente%20em%20janela.png', 'Cortina Voil Transparente em janela', 0),
+(5, 5, '/ane-cortinas/images/Almofada%20Decorativa%20Terracota.png', 'Almofada Decorativa Terracota', 0),
+(6, 6, '/ane-cortinas/images/Almofada%20Veludo%20Cinza.png', 'Almofada Veludo Cinza', 0),
+(7, 7, '/ane-cortinas/images/Almofada%20Bordada%20Verde.png', 'Almofada Bordada Verde', 0),
+(8, 8, '/ane-cortinas/images/Pingente%20Decorativo%20Dourado.png', 'Pingente Decorativo Dourado', 0),
+(9, 9, '/ane-cortinas/images/Pingente%20Cristal%20Premium.png', 'Pingente Cristal Premium', 0);
 
 /*!40000 ALTER TABLE `product_images` ENABLE KEYS */;
 UNLOCK TABLES;
