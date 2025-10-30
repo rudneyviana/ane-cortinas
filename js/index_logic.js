@@ -35,9 +35,9 @@ async function loadCategories() {
     try {
         const categories = await getCategories();
         const categoryImages = {
-            'Cortinas': 'https://images.pexels.com/photos/1350789/pexels-photo-1350789.jpeg?auto=compress&cs=tinysrgb&w=600',
-            'Almofadas': 'https://images.pexels.com/photos/116915/pexels-photo-116915.jpeg?auto=compress&cs=tinysrgb&w=600',
-            'Pingentes': 'https://images.pexels.com/photos/6633923/pexels-photo-6633923.jpeg?auto=compress&cs=tinysrgb&w=600'
+            'Cortinas': 'https://img.freepik.com/fotos-premium/uma-janela-com-cortinas-no-escuro_881868-938.jpg?semt=ais_hybrid&w=740&q=80',
+            'Almofadas': 'https://images.tcdn.com.br/img/img_prod/738982/kit_03_capas_de_almofadas_padrao_grego_azul_45x45cm_959_1_61b766c15d959734748dfd5119f934ed.jpg',
+            'Pingentes': 'https://cdnm.westwing.com.br/glossary/uploads/br/2015/06/02142404/detalhe-de-cortina-presa-com-um-pingente-em-tassel_c-a1786.jpg'
         };
 
         if(categories.length === 0) {
