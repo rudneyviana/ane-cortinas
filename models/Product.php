@@ -7,14 +7,34 @@ class Product extends BaseModel {
     }
 
     public function findAllWithDetails(array $filters = []): array {
-        $sql = "SELECT p.*, c.name as category_name FROM {$this->table} p JOIN categories c ON p.category_id = c.id";
+        // Traz categoria e a PRIMEIRA imagem (por sort_order) como thumbnail 'image_url'
+        $sql = "
+            SELECT 
+                p.*,
+                c.name AS category_name,
+                (
+                    SELECT pi.image_url
+                    FROM product_images pi
+                    WHERE pi.product_id = p.id
+                    ORDER BY pi.sort_order ASC, pi.id ASC
+                    LIMIT 1
+                ) AS image_url
+            FROM {$this->table} p
+            JOIN categories c ON p.category_id = c.id
+        ";
+
         $where = [];
         $params = [];
+
         if (!empty($filters['category_id'])) {
             $where[] = "p.category_id = :category_id";
             $params['category_id'] = $filters['category_id'];
         }
-        if (!empty($where)) $sql .= " WHERE " . implode(' AND ', $where);
+
+        if (!empty($where)) {
+            $sql .= " WHERE " . implode(' AND ', $where);
+        }
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();

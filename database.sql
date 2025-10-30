@@ -294,7 +294,18 @@ CREATE TABLE `product_images` (
 
 LOCK TABLES `product_images` WRITE;
 /*!40000 ALTER TABLE `product_images` DISABLE KEYS */;
-INSERT INTO `product_images` VALUES (1,1,'https://images.pexels.com/photos/1350789/pexels-photo-1350789.jpeg?auto=compress&cs=tinysrgb&w=600','Cortina Elegance Bege em sala de estar',0),(2,2,'https://images.pexels.com/photos/923192/pexels-photo-923192.jpeg?auto=compress&cs=tinysrgb&w=600','Cortina Blackout Premium em quarto',0),(3,3,'https://images.pexels.com/photos/1648776/pexels-photo-1648776.jpeg?auto=compress&cs=tinysrgb&w=600','Cortina Veludo Luxo em ambiente clássico',0),(4,4,'https://images.pexels.com/photos/1457847/pexels-photo-1457847.jpeg?auto=compress&cs=tinysrgb&w=600','Cortina Voil Transparente em janela',0),(5,5,'https://images.pexels.com/photos/1350789/pexels-photo-1350789.jpeg?auto=compress&cs=tinysrgb&w=600','Almofada Decorativa Terracota',0),(6,6,'https://images.pexels.com/photos/1350789/pexels-photo-1350789.jpeg?auto=compress&cs=tinysrgb&w=600','Almofada Veludo Cinza',0),(7,7,'https://images.pexels.com/photos/1350789/pexels-photo-1350789.jpeg?auto=compress&cs=tinysrgb&w=600','Almofada Bordada Verde',0),(8,8,'https://images.pexels.com/photos/6633923/pexels-photo-6633923.jpeg?auto=compress&cs=tinysrgb&w=600','Pingente Decorativo Dourado',0),(9,9,'https://images.pexels.com/photos/6633923/pexels-photo-6633923.jpeg?auto=compress&cs=tinysrgb&w=600','Pingente Cristal Premium',0);
+
+INSERT INTO `product_images` (`id`,`product_id`,`image_url`,`alt_text`,`sort_order`) VALUES
+(1, 1, '/projeto_ane_cortinas_v3/images/Cortina%20Elegance%20Bege%20em%20sala%20de%20estar.png', 'Cortina Elegance Bege em sala de estar', 0),
+(2, 2, '/projeto_ane_cortinas_v3/images/Cortina%20Blackout%20Premium%20em%20quarto.png', 'Cortina Blackout Premium em quarto', 0),
+(3, 3, '/projeto_ane_cortinas_v3/images/Cortina%20Veludo%20Luxo%20em%20ambiente%20cl%C3%A1ssico.png', 'Cortina Veludo Luxo em ambiente clássico', 0),
+(4, 4, '/projeto_ane_cortinas_v3/images/Cortina%20Voil%20Transparente%20em%20janela.png', 'Cortina Voil Transparente em janela', 0),
+(5, 5, '/projeto_ane_cortinas_v3/images/Almofada%20Decorativa%20Terracota.png', 'Almofada Decorativa Terracota', 0),
+(6, 6, '/projeto_ane_cortinas_v3/images/Almofada%20Veludo%20Cinza.png', 'Almofada Veludo Cinza', 0),
+(7, 7, '/projeto_ane_cortinas_v3/images/Almofada%20Bordada%20Verde.png', 'Almofada Bordada Verde', 0),
+(8, 8, '/projeto_ane_cortinas_v3/images/Pingente%20Decorativo%20Dourado.png', 'Pingente Decorativo Dourado', 0),
+(9, 9, '/projeto_ane_cortinas_v3/images/Pingente%20Cristal%20Premium.png', 'Pingente Cristal Premium', 0);
+
 /*!40000 ALTER TABLE `product_images` ENABLE KEYS */;
 UNLOCK TABLES;
 
