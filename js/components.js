@@ -10,7 +10,7 @@ export function createHeader(user, cart) {
                 </a>
                 <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto">
                     <a href="account.html" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-100">Minha Conta</a>
-                    ${user.role === 'ADMIN' ? '<a href="admin/dashboard.html" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-100">Painel Admin</a>' : ''}
+                    ${user.role === 'ADMIN' ? '<a href="/projeto_ane_cortinas_v3/admin/" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-100">Painel Admin</a>' : ''}
                     <a href="#" id="logout-button" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-100">Sair</a>
                 </div>
             </div>

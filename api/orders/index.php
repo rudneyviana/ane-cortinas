@@ -18,15 +18,17 @@ $orderModel = new Order();
 
 try {
     if ($method === 'GET') {
-        AuthMiddleware::verifyToken(['ADMIN']);
+        // GET liberado (somente leitura)
         $orders = $orderModel->findAllWithDetails();
         Response::send(200, $orders);
+
     } elseif ($method === 'POST') {
-        // create order (public)
+        // criação de pedido (já era pública)
         $data = Request::getBody();
         $createdId = $orderModel->create($data);
         $created = $orderModel->findWithItems($createdId);
         Response::send(201, $created);
+
     } else {
         Response::send(405, ['error' => 'Método não permitido.']);
     }
