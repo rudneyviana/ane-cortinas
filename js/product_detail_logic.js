@@ -50,7 +50,8 @@ function transformDetailsToAttributes(product) {
 
 function renderProductDetail() {
     const container = document.getElementById('product-detail-container');
-    const imageUrl = currentProduct.images?.[0]?.image_url || 'https://placehold.co/600x600/f5f5f4/a37336?text=Ane';
+    const imageUrl = currentproduct.image_url || product.images?.[0]?.image_url
+ || 'https://placehold.co/600x600/f5f5f4/a37336?text=Ane';
 
     let customizationHtml = '';
     if (currentProduct.customizableAttributes && currentProduct.customizableAttributes.length > 0) {
@@ -158,7 +159,8 @@ function handleAddToCart() {
         price: currentPrice,
         quantity: parseInt(document.getElementById('quantity').value),
         customizations: customizations,
-        image: currentProduct.images?.[0]?.image_url || null
+        image: currentproduct.image_url || product.images?.[0]?.image_url
+ || null
     };
 
     addToCart(item);

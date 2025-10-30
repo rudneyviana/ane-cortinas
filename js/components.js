@@ -84,8 +84,9 @@ export function createFooter() {
 export function createProductCard(product) {
     const card = document.createElement('div');
     card.className = 'group relative flex flex-col bg-white border border-stone-200/80 rounded-lg overflow-hidden transition-shadow hover:shadow-xl';
-    
-    const imageUrl = product.images?.[0]?.image_url || 'https://placehold.co/400x400/f5f5f4/a37336?text=Ane';
+
+    const imageUrl = product.image_url || product.image_url || product.images?.[0]?.image_url
+ || 'https://placehold.co/400x400/f5f5f4/a37336?text=Ane';
 
     card.innerHTML = `
         <div class="aspect-square overflow-hidden bg-stone-100">
