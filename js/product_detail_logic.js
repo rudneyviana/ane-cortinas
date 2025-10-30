@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const container = document.getElementById('product-detail-container');
 
     if (!productId) {
-        container.innerHTML = '<p class="text-center text-red-500">Produto não encontrado. ID inválido.</p>';
+        if (container) container.innerHTML = '<p class="text-center text-red-500">Produto não encontrado. ID inválido.</p>';
         return;
     }
 
@@ -21,37 +21,44 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentProduct = await getProductById(productId);
 
         if (!currentProduct) {
-            container.innerHTML = '<p class="text-center text-red-500">Produto não encontrado.</p>';
+            if (container) container.innerHTML = '<p class="text-center text-red-500">Produto não encontrado.</p>';
             return;
         }
 
         currentProduct.customizableAttributes = transformDetailsToAttributes(currentProduct);
-        currentPrice = parseFloat(currentProduct.price);
-        renderProductDetail();
+        currentPrice = parseFloat(currentProduct.price || 0) || 0;
 
+        renderProductDetail();
     } catch (error) {
         console.error('Error fetching product details:', error);
-        container.innerHTML = '<p class="text-center text-red-500">Não foi possível carregar o produto. Tente novamente mais tarde.</p>';
+        if (container) container.innerHTML = '<p class="text-center text-red-500">Não foi possível carregar o produto. Tente novamente mais tarde.</p>';
     }
 });
 
 function transformDetailsToAttributes(product) {
-    if (!product.details) return [];
-    
+    if (!product || !product.details) return [];
+
     const attributes = [];
     if (product.category_name === 'Cortinas') {
-        attributes.push({ label: 'Largura (m)', type: 'number', id: 'width', 'data-price-per-unit': '50' }); // Exemplo de preço por metro
+        attributes.push({ label: 'Largura (m)', type: 'number', id: 'width', 'data-price-per-unit': '50' });
         attributes.push({ label: 'Altura (m)', type: 'number', id: 'height', 'data-price-per-unit': '30' });
         attributes.push({ label: 'Tipo de Trilho', type: 'select', id: 'rail_type', options: ['Trilho Suíço', 'Varão Cromado', 'Varão Branco'] });
     }
     return attributes;
 }
 
-
 function renderProductDetail() {
     const container = document.getElementById('product-detail-container');
-    const imageUrl = currentproduct.image_url || product.images?.[0]?.image_url
- || 'https://placehold.co/600x600/f5f5f4/a37336?text=Ane';
+
+    if (!currentProduct) {
+        if (container) container.innerHTML = '<p class="text-center text-red-500">Produto não encontrado.</p>';
+        return;
+    }
+
+    const imageUrl =
+        currentProduct.image_url ||
+        currentProduct.images?.[0]?.image_url ||
+        'https://placehold.co/600x600/f5f5f4/a37336?text=Ane';
 
     let customizationHtml = '';
     if (currentProduct.customizableAttributes && currentProduct.customizableAttributes.length > 0) {
@@ -81,11 +88,11 @@ function renderProductDetail() {
             <div class="flex flex-col justify-center">
                 <h1 class="text-3xl lg:text-4xl font-playfair-display font-bold mb-2">${currentProduct.name}</h1>
                 <p class="text-sm text-stone-500 mb-4">SKU: PROD-${currentProduct.id.toString().padStart(5, '0')}</p>
-                <p id="product-price" class="text-3xl font-bold text-amber-800 mb-6">R$ ${parseFloat(currentProduct.price).toFixed(2).replace('.', ',')}</p>
-                <div class="prose text-stone-600 mb-6">${currentProduct.description}</div>
-                
+                <p id="product-price" class="text-3xl font-bold text-amber-800 mb-6">R$ ${(parseFloat(currentProduct.price || 0) || 0).toFixed(2).replace('.', ',')}</p>
+                <div class="prose text-stone-600 mb-6">${currentProduct.description || ''}</div>
+
                 ${customizationHtml ? `<div class="mb-6 border-t pt-6"><h3 class="text-lg font-semibold mb-2">Personalize seu Produto</h3>${customizationHtml}</div>` : ''}
-                
+
                 <div class="flex items-center gap-4 mb-6">
                     <div class="flex items-center border border-stone-300 rounded-md">
                         <button id="qty-minus" class="p-3 text-stone-600 hover:bg-stone-100 rounded-l-md"><i data-lucide="minus"></i></button>
@@ -101,7 +108,11 @@ function renderProductDetail() {
         </div>
     `;
 
-    lucide.createIcons();
+    // Ícones
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+    }
+
     attachEventListeners();
     updatePrice();
 }
@@ -112,39 +123,54 @@ function attachEventListeners() {
         input.addEventListener('input', updatePrice);
     });
 
-    document.getElementById('qty-minus').addEventListener('click', () => {
-        const qtyInput = document.getElementById('quantity');
-        let qty = parseInt(qtyInput.value);
-        if (qty > 1) {
-            qtyInput.value = qty - 1;
-        }
-    });
+    const minusBtn = document.getElementById('qty-minus');
+    const plusBtn = document.getElementById('qty-plus');
+    const addBtn = document.getElementById('add-to-cart-btn');
 
-    document.getElementById('qty-plus').addEventListener('click', () => {
-        const qtyInput = document.getElementById('quantity');
-        qtyInput.value = parseInt(qtyInput.value) + 1;
-    });
+    if (minusBtn) {
+        minusBtn.addEventListener('click', () => {
+            const qtyInput = document.getElementById('quantity');
+            let qty = parseInt(qtyInput.value, 10);
+            if (qty > 1) qtyInput.value = qty - 1;
+        });
+    }
 
-    document.getElementById('add-to-cart-btn').addEventListener('click', handleAddToCart);
+    if (plusBtn) {
+        plusBtn.addEventListener('click', () => {
+            const qtyInput = document.getElementById('quantity');
+            qtyInput.value = (parseInt(qtyInput.value, 10) || 0) + 1;
+        });
+    }
+
+    if (addBtn) addBtn.addEventListener('click', handleAddToCart);
 }
 
 function updatePrice() {
-    let price = parseFloat(currentProduct.price);
+    let price = parseFloat(currentProduct?.price || 0) || 0;
+
     document.querySelectorAll('.customization-input').forEach(input => {
         if (input.tagName === 'SELECT') {
             const selectedOption = input.options[input.selectedIndex];
-            price += parseFloat(selectedOption.dataset.priceModifier || 0);
+            price += parseFloat(selectedOption?.dataset?.priceModifier || 0) || 0;
         } else if (input.type === 'number') {
             const value = parseFloat(input.value) || 0;
-            const pricePerUnit = parseFloat(input.dataset.pricePerUnit || 0);
+            const pricePerUnit = parseFloat(input.dataset.pricePerUnit || 0) || 0;
             price += value * pricePerUnit;
         }
     });
+
     currentPrice = price;
-    document.getElementById('product-price').textContent = `R$ ${price.toFixed(2).replace('.', ',')}`;
+
+    const priceEl = document.getElementById('product-price');
+    if (priceEl) {
+        priceEl.textContent = `R$ ${price.toFixed(2).replace('.', ',')}`;
+    }
 }
 
 function handleAddToCart() {
+    const qtyInput = document.getElementById('quantity');
+    const quantity = Math.max(parseInt(qtyInput?.value, 10) || 1, 1);
+
     const customizations = [];
     document.querySelectorAll('.customization-input').forEach(input => {
         customizations.push({
@@ -157,10 +183,9 @@ function handleAddToCart() {
         id: currentProduct.id,
         name: currentProduct.name,
         price: currentPrice,
-        quantity: parseInt(document.getElementById('quantity').value),
-        customizations: customizations,
-        image: currentproduct.image_url || product.images?.[0]?.image_url
- || null
+        quantity,
+        customizations,
+        image: currentProduct.image_url || currentProduct.images?.[0]?.image_url || null
     };
 
     addToCart(item);
@@ -170,6 +195,7 @@ function handleAddToCart() {
 
 function showToast() {
     const toast = document.getElementById('toast');
+    if (!toast) return;
     toast.classList.remove('opacity-0', 'translate-y-3');
     setTimeout(() => {
         toast.classList.add('opacity-0', 'translate-y-3');
