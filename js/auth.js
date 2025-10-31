@@ -49,7 +49,7 @@ export async function login(email, password) {
             
             // Se for admin, redireciona para o painel admin
             if (data.user.role === 'ADMIN') {
-                window.location.href = '/projeto_ane_cortinas/admin/';
+                window.location.href = '/ane-cortinas/admin/';
                 return { success: true, user: data.user };
             }
             

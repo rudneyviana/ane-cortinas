@@ -10,7 +10,7 @@ export function createHeader(user, cart) {
                 </a>
                 <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto">
                     <a href="account.html" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-100">Minha Conta</a>
-                    ${user.role === 'ADMIN' ? '<a href="admin/dashboard.html" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-100">Painel Admin</a>' : ''}
+                    ${user.role === 'ADMIN' ? '<a href="/ane-cortinas/admin/" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-100">Painel Admin</a>' : ''}
                     <a href="#" id="logout-button" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-100">Sair</a>
                 </div>
             </div>
@@ -84,8 +84,9 @@ export function createFooter() {
 export function createProductCard(product) {
     const card = document.createElement('div');
     card.className = 'group relative flex flex-col bg-white border border-stone-200/80 rounded-lg overflow-hidden transition-shadow hover:shadow-xl';
-    
-    const imageUrl = product.images?.[0]?.image_url || 'https://placehold.co/400x400/f5f5f4/a37336?text=Ane';
+
+    const imageUrl = product.image_url || product.image_url || product.images?.[0]?.image_url
+ || 'https://placehold.co/400x400/f5f5f4/a37336?text=Ane';
 
     card.innerHTML = `
         <div class="aspect-square overflow-hidden bg-stone-100">
