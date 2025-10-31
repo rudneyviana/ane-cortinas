@@ -330,7 +330,7 @@ async function reloadAndRender(container, state) {
 export async function render(container) {
   container.innerHTML = `
     <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold text-gray-800">Categorias</h1>
+      <h1 class="text-3xl font-bold text-gray-800">Categorias</h1>
       <button id="btn-new" class="inline-flex items-center gap-2 px-4 py-2 rounded bg-amber-600 text-white hover:bg-amber-700 transition">
         ${icon('plus')} <span>Nova Categoria</span>
       </button>
