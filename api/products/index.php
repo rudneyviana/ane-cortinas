@@ -238,6 +238,33 @@ try {
         Response::send(200, $row);
     }
 
+    // DELETE /api/products/{id}
+    if (
+        ($method === 'DELETE' && $id) ||
+        ($method === 'POST' && $id && ($b = Request::getBody()) && isset($b['_method']) && strtoupper($b['_method']) === 'DELETE')
+    ) {
+        // Verifica se existe
+        $row = fetchOne($db, $id);
+        if (!$row) {
+            Response::send(404, ['error' => 'Produto não encontrado.']);
+        }
+
+        try {
+            // Observação: tabelas de detalhes/imagens têm ON DELETE CASCADE
+            $st = $db->prepare("DELETE FROM products WHERE id = :id");
+            $st->execute(['id' => $id]);
+            Response::send(204); // sem corpo
+        } catch (PDOException $e) {
+            // Chave estrangeira (p.ex., produto já usado em pedidos)
+            if ($e->getCode() === '23000') {
+                Response::send(409, [
+                    'error' => 'Não é possível excluir: o produto está vinculado a pedidos. Desative-o em vez de excluir.'
+                ]);
+            }
+            throw $e;
+        }
+    }
+
     Response::send(405, ['error' => 'Método não permitido.']);
 
 } catch (Exception $e) {

@@ -103,13 +103,14 @@ function renderTable(container, list) {
     const editId = btn.getAttribute('data-edit');
     if (delId) {
       if (confirm('Excluir este produto?')) {
-        await api.del(`products/${delId}`);
-        showToast('Produto excluído');
-        init(container); // reload
+        try {
+          await api.del(`products/${delId}`);
+          showToast('Produto excluído');
+          init(container); // recarrega a tabela
+        } catch (err) {
+          showToast(err?.message || 'Falha ao excluir produto');
+        }
       }
-    } else if (editId) {
-      const product = list.find(p => String(p.id) === String(editId));
-      openFormModal(product);
     }
   });
 
