@@ -12,6 +12,16 @@ function statusPill(active) {
   return `<span class="px-2 py-1 rounded text-xs font-medium ${cls}">${txt}</span>`;
 }
 
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, (m) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[m]));
+}
+
 function productRow(p) {
   const thumb = p.image_url || p.image || p.thumbnail || '';
   const category = p.category_name || p.category || '-';
@@ -95,7 +105,7 @@ function renderTable(container, list) {
   // Botão "Novo Produto"
   container.querySelector('#btn-new').addEventListener('click', () => openFormModal());
 
-  // === Event delegation para Editar/Excluir (fix) ===
+  // === Event delegation para Editar/Excluir ===
   if (!container._productsDelegationAttached) {
     container._productsDelegationAttached = true;
     container.addEventListener('click', async (e) => {
@@ -105,7 +115,6 @@ function renderTable(container, list) {
       const editId = btn.getAttribute('data-edit');
       if (editId) {
         try {
-          // tenta buscar do backend; se falhar usa o item da lista já carregada
           let product = null;
           try {
             product = await api.get(`products/${editId}`);
@@ -121,15 +130,13 @@ function renderTable(container, list) {
 
       const delId = btn.getAttribute('data-del');
       if (delId) {
-        if (confirm('Excluir este produto?')) {
-          try {
-            await api.del(`products/${delId}`);
-            showToast('Produto excluído');
-            init(container); // recarrega a tabela
-          } catch (err) {
-            showToast(err?.message || 'Falha ao excluir produto');
-          }
-        }
+        // Abre modal de confirmação (novo)
+        let product = list.find(p => String(p.id) === String(delId)) || { id: delId };
+        try {
+          // tenta pegar dados atualizados (opcional)
+          product = await api.get(`products/${delId}`).catch(() => product);
+        } catch {}
+        openDeleteModal(container, product);
         return;
       }
     });
@@ -226,6 +233,39 @@ async function openFormModal(product = null) {
     closeModal();
     const root = document.getElementById('content-root');
     init(root);
+  });
+}
+
+/* ===== NOVO: Modal de confirmação de exclusão ===== */
+function openDeleteModal(container, product) {
+  const name = product?.name || product?.title || 'este produto';
+  const sku = product?.sku ? ` (SKU ${escapeHtml(product.sku)})` : '';
+  showModal({
+    title: 'Excluir produto',
+    contentHtml: `
+      <div class="space-y-3">
+        <p class="text-sm text-gray-700">
+          Tem certeza que deseja excluir <strong>${escapeHtml(name)}</strong>${sku}?
+        </p>
+        <p class="text-xs text-gray-500">Esta ação não pode ser desfeita.</p>
+      </div>
+    `,
+    footerHtml: `
+      <button id="btn-cancel-del" class="px-4 py-2 rounded border mr-2">Cancelar</button>
+      <button id="btn-confirm-del" class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700">Excluir</button>
+    `
+  });
+
+  document.getElementById('btn-cancel-del').addEventListener('click', closeModal);
+  document.getElementById('btn-confirm-del').addEventListener('click', async () => {
+    try {
+      await api.del(`products/${product.id}`);
+      showToast('Produto excluído');
+      closeModal();
+      init(container); // recarrega a tabela
+    } catch (err) {
+      showToast(err?.message || 'Falha ao excluir produto');
+    }
   });
 }
 
