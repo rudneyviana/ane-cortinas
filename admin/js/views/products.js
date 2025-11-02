@@ -1,4 +1,3 @@
-
 import * as api from '../api_service.js';
 import { showModal, closeModal, renderSpinner, showToast } from '../ui_service.js';
 
@@ -93,26 +92,48 @@ function renderTable(container, list) {
   };
   container.querySelector('#search-input').addEventListener('input', doFilter);
 
-  // Events: new, edit, delete
+  // Botão "Novo Produto"
   container.querySelector('#btn-new').addEventListener('click', () => openFormModal());
 
-  container.addEventListener('click', async (e) => {
-    const btn = e.target.closest('button');
-    if (!btn) return;
-    const delId = btn.getAttribute('data-del');
-    const editId = btn.getAttribute('data-edit');
-    if (delId) {
-      if (confirm('Excluir este produto?')) {
+  // === Event delegation para Editar/Excluir (fix) ===
+  if (!container._productsDelegationAttached) {
+    container._productsDelegationAttached = true;
+    container.addEventListener('click', async (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+
+      const editId = btn.getAttribute('data-edit');
+      if (editId) {
         try {
-          await api.del(`products/${delId}`);
-          showToast('Produto excluído');
-          init(container); // recarrega a tabela
+          // tenta buscar do backend; se falhar usa o item da lista já carregada
+          let product = null;
+          try {
+            product = await api.get(`products/${editId}`);
+          } catch {
+            product = list.find(p => String(p.id) === String(editId)) || { id: editId };
+          }
+          openFormModal(product);
         } catch (err) {
-          showToast(err?.message || 'Falha ao excluir produto');
+          showToast(err?.message || 'Falha ao abrir editor');
         }
+        return;
       }
-    }
-  });
+
+      const delId = btn.getAttribute('data-del');
+      if (delId) {
+        if (confirm('Excluir este produto?')) {
+          try {
+            await api.del(`products/${delId}`);
+            showToast('Produto excluído');
+            init(container); // recarrega a tabela
+          } catch (err) {
+            showToast(err?.message || 'Falha ao excluir produto');
+          }
+        }
+        return;
+      }
+    });
+  }
 
   if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
 }
@@ -174,7 +195,7 @@ async function openFormModal(product = null) {
     `
   });
 
-  // Load categories into select
+  // Carrega categorias no <select>
   const $form = document.getElementById('product-form');
   const $cat = $form.querySelector('select[name=category_id]');
   try {
@@ -203,7 +224,6 @@ async function openFormModal(product = null) {
       showToast('Produto criado');
     }
     closeModal();
-    // reload list
     const root = document.getElementById('content-root');
     init(root);
   });
@@ -225,7 +245,7 @@ export async function init(container) {
   const holder = container.querySelector('#list-holder');
   renderSpinner(holder);
   try {
-    // Tolerante: tanto 'products' quanto 'produtos' (se backend em pt)
+    // Tolerante: tanto 'products' quanto 'produtos'
     let list;
     try {
       list = await api.get('products');
