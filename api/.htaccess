@@ -1,0 +1,11 @@
+RewriteEngine On
+
+# Se o caminho não é arquivo nem diretório real…
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# /api/products           -> /api/products/index.php
+RewriteRule ^([^/]+)/?$                          $1/index.php [QSA,NC,L]
+
+# /api/products/123       -> /api/products/index.php?id=123
+RewriteRule ^([^/]+)/([0-9]+)/?$                 $1/index.php?id=$2 [QSA,NC,L]
