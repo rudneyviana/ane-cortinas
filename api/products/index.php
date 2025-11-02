@@ -17,14 +17,53 @@ if (Request::getMethod() === 'OPTIONS') {
 $method = Request::getMethod();
 $db     = Database::getInstance();
 
-// ID pode vir por rewrite: /api/products/index.php?id=123
+// /api/products/123 -> index.php?id=123 (via .htaccess)
 $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
 
-// Helpers
+/** Normaliza valores monetários vindos como "R$ 1.234,56" ou "1234.56" */
+function parse_money($val) {
+    if ($val === null) return null;
+    $s = trim((string)$val);
+    if ($s === '') return null;
+
+    // Remove "R$", espaços e outros símbolos
+    $s = str_replace(['R$', ' '], '', $s);
+
+    // Se tem ponto e vírgula, assume BR: milhar . ; decimal ,
+    if (strpos($s, '.') !== false && strpos($s, ',') !== false) {
+        $s = str_replace('.', '', $s);    // remove milhares
+        $s = str_replace(',', '.', $s);   // decimal ponto
+    } else if (strpos($s, ',') !== false) {
+        // Só vírgula -> decimal
+        $s = str_replace(',', '.', $s);
+    }
+    // Agora $s deve estar em formato 1234.56
+    if (!is_numeric($s)) return null;
+    return (float)$s;
+}
+
+/** Formata um produto para garantir presença de base_price */
+function normalize_product_row(array $row) {
+    // Garante as duas chaves com o mesmo valor
+    if (isset($row['price'])) {
+        $row['base_price'] = $row['price'];
+    } elseif (isset($row['base_price'])) {
+        $row['price'] = $row['base_price'];
+    } else {
+        $row['price'] = $row['base_price'] = 0.0;
+    }
+    // Converte 0/1 de is_active para int
+    if (isset($row['is_active'])) {
+        $row['is_active'] = (int)$row['is_active'];
+    }
+    return $row;
+}
+
 function fetchOne(PDO $db, int $id) {
     $sql = "
         SELECT 
             p.*,
+            p.price AS base_price,            -- espelho
             c.name AS category_name,
             (
                 SELECT pi.image_url
@@ -40,13 +79,15 @@ function fetchOne(PDO $db, int $id) {
     ";
     $st = $db->prepare($sql);
     $st->execute(['id' => $id]);
-    return $st->fetch();
+    $row = $st->fetch();
+    return $row ? normalize_product_row($row) : null;
 }
 
 function fetchList(PDO $db, array $filters = []) {
     $sql = "
         SELECT 
             p.*,
+            p.price AS base_price,            -- espelho
             c.name AS category_name,
             (
                 SELECT pi.image_url
@@ -62,16 +103,16 @@ function fetchList(PDO $db, array $filters = []) {
     $params = [];
 
     if (isset($filters['category_id']) && $filters['category_id'] !== '') {
-        $where[]             = 'p.category_id = :category_id';
+        $where[]               = 'p.category_id = :category_id';
         $params['category_id'] = (int)$filters['category_id'];
     }
     if (isset($filters['active']) && $filters['active'] !== '') {
-        $where[]             = 'p.is_active = :active';
-        $params['active']    = (int)!!$filters['active'];
+        $where[]            = 'p.is_active = :active';
+        $params['active']   = (int)!!$filters['active'];
     }
     if (!empty($filters['q'])) {
-        $where[]             = 'p.name LIKE :q';
-        $params['q']         = '%'.$filters['q'].'%';
+        $where[]          = 'p.name LIKE :q';
+        $params['q']      = '%'.$filters['q'].'%';
     }
 
     if ($where) $sql .= ' WHERE '.implode(' AND ', $where);
@@ -79,13 +120,12 @@ function fetchList(PDO $db, array $filters = []) {
 
     $st = $db->prepare($sql);
     $st->execute($params);
-    return $st->fetchAll();
+    $rows = $st->fetchAll();
+    return array_map('normalize_product_row', $rows);
 }
 
 try {
     if ($method === 'GET') {
-        // GET /api/products           -> lista
-        // GET /api/products/{id}      -> um item
         if ($id) {
             $row = fetchOne($db, $id);
             if (!$row) Response::send(404, ['error' => 'Produto não encontrado.']);
@@ -102,10 +142,9 @@ try {
     }
 
     if ($method === 'POST' && !$id) {
-        // (Opcional para depois) criar novo produto
         $data        = Request::getBody();
         $name        = trim($data['name'] ?? '');
-        $price       = (float)($data['base_price'] ?? $data['price'] ?? 0);
+        $priceFloat  = parse_money($data['base_price'] ?? $data['price'] ?? null);
         $category_id = (int)($data['category_id'] ?? 0);
         $active      = isset($data['active']) ? (int)!!$data['active'] : 1;
 
@@ -120,13 +159,12 @@ try {
         $st->execute([
             'name'        => $name,
             'description' => $data['description'] ?? null,
-            'price'       => $price,
+            'price'       => $priceFloat ?? 0.0,
             'category_id' => $category_id,
             'is_active'   => $active,
         ]);
         $newId = (int)$db->lastInsertId();
 
-        // Primeira imagem (opcional)
         if (!empty($data['image_url'])) {
             $st = $db->prepare("
                 INSERT INTO product_images (product_id, image_url, sort_order)
@@ -140,7 +178,6 @@ try {
     }
 
     if ($method === 'PUT' && $id) {
-        // EDITAR /api/products/{id}
         $data        = Request::getBody();
         $fields      = [];
         $params      = ['id' => $id];
@@ -149,17 +186,22 @@ try {
             $fields[]         = 'name = :name';
             $params['name']   = trim((string)$data['name']);
         }
-        if (array_key_exists('base_price', $data) || array_key_exists('price', $data)) {
-            $fields[]         = 'price = :price';
-            $params['price']  = (float)($data['base_price'] ?? $data['price'] ?? 0);
+
+        // ATENÇÃO: só atualiza preço se veio um valor válido
+        $priceCandidate = $data['base_price'] ?? $data['price'] ?? null;
+        $priceFloat     = parse_money($priceCandidate);
+        if ($priceFloat !== null) {
+            $fields[]        = 'price = :price';
+            $params['price'] = $priceFloat;
         }
+
         if (isset($data['category_id'])) {
             $fields[]              = 'category_id = :category_id';
             $params['category_id'] = (int)$data['category_id'];
         }
         if (isset($data['active'])) {
-            $fields[]             = 'is_active = :is_active';
-            $params['is_active']  = (int)!!$data['active'];
+            $fields[]            = 'is_active = :is_active';
+            $params['is_active'] = (int)!!$data['active'];
         }
 
         if ($fields) {
@@ -168,9 +210,8 @@ try {
             $st->execute($params);
         }
 
-        // Atualiza/insere a primeira imagem (opcional)
+        // Upsert da primeira imagem
         if (!empty($data['image_url'])) {
-            // Já existe uma primeira imagem?
             $st = $db->prepare("
                 SELECT id FROM product_images
                 WHERE product_id = :pid
@@ -197,7 +238,6 @@ try {
         Response::send(200, $row);
     }
 
-    // (DELETE ficará para quando você pedir)
     Response::send(405, ['error' => 'Método não permitido.']);
 
 } catch (Exception $e) {
