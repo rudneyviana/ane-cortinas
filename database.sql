@@ -98,7 +98,7 @@ CREATE TABLE `customers` (
 
 LOCK TABLES `customers` WRITE;
 /*!40000 ALTER TABLE `customers` DISABLE KEYS */;
-INSERT INTO `customers` VALUES (1,'Maria Silva','maria.silva@example.com','(45) 99999-8888',NULL,NULL,'Medianeira','PR',NULL,'2025-10-27 19:10:06');
+INSERT INTO `customers` VALUES (1,'Maria Silva','maria.silva@gmail.com','(45) 99999-8888',NULL,NULL,'Medianeira','PR',NULL,'2025-10-27 19:10:06');
 /*!40000 ALTER TABLE `customers` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -195,7 +195,7 @@ CREATE TABLE `orders` (
 
 LOCK TABLES `orders` WRITE;
 /*!40000 ALTER TABLE `orders` DISABLE KEYS */;
-INSERT INTO `orders` VALUES (6,NULL,'{\"name\": \"João Convidado\", \"email\": \"joao.convidado@example.com\", \"phone\": \"(45) 90000-0000\", \"address_line1\": \"Rua das Cortinas, 123\", \"city\": \"Medianeira\", \"state\": \"PR\"}',670.00,'pending',NULL,'2025-10-29 01:18:55','2025-10-29 01:18:55'),(7,1,NULL,1155.00,'processing',NULL,'2025-10-29 01:19:16','2025-10-29 01:19:16');
+INSERT INTO `orders` VALUES (6,NULL,'{\"name\": \"João Convidado\", \"email\": \"joao.convidado@gmail.com\", \"phone\": \"(45) 90000-0000\", \"address_line1\": \"Rua das Cortinas, 123\", \"city\": \"Medianeira\", \"state\": \"PR\"}',670.00,'pending',NULL,'2025-10-29 01:18:55','2025-10-29 01:18:55'),(7,1,NULL,1155.00,'processing',NULL,'2025-10-29 01:19:16','2025-10-29 01:19:16');
 /*!40000 ALTER TABLE `orders` ENABLE KEYS */;
 UNLOCK TABLES;
 
