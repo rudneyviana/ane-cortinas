@@ -366,7 +366,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'Admin User','admin@example.com','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','ADMIN','2025-10-27 19:10:05'),(2,'Teste Usuario','teste@example.com','$2y$10$fC1VxZN5vstd2sasIO/hY.BUu1as0s739cZEIrQAYSvIkdcQ66T2e','CUSTOMER','2025-10-27 20:06:43'),(3,'Rudney Viana da Silva','rudneyviana123@gmail.com','$2y$10$RmiFVMm3Rw5H09FP79m9xuAqPe5orre.OPwfKTz2T4KpoHFe3uloW','CUSTOMER','2025-10-27 20:10:44'),(4,'Teste Admin','teste-admin@gmail.com','$2y$10$1GBgNnwChCaSDJdCqLywBeVBQaqne.fuJVG/iM9blEdyixzZXzom6','ADMIN','2025-10-28 00:00:56');
+INSERT INTO `users` VALUES (1,'Admin User','admin@anecortinas.com','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','ADMIN','2025-10-27 19:10:05'),(2,'Teste Usuario','teste@anecortinas.com','$2y$10$fC1VxZN5vstd2sasIO/hY.BUu1as0s739cZEIrQAYSvIkdcQ66T2e','CUSTOMER','2025-10-27 20:06:43'),(3,'Teste Admin','teste-admin@anecortinas.com','$2y$10$1GBgNnwChCaSDJdCqLywBeVBQaqne.fuJVG/iM9blEdyixzZXzom6','ADMIN','2025-10-28 00:00:56');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 

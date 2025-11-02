@@ -50,7 +50,7 @@ ORDER BY p.id;
 
 -- 7. Verificar se o usuário admin existe
 SELECT id, name, email, role FROM users WHERE role = 'ADMIN';
--- Resultado esperado: 1 linha (admin@example.com)
+-- Resultado esperado: 1 linha (admin@anecortinas.com)
 
 -- 8. Verificar produtos ativos
 SELECT COUNT(*) as produtos_ativos FROM products WHERE is_active = 1;
