@@ -3,184 +3,102 @@ import { showModal, closeModal, renderSpinner, showToast } from '../ui_service.j
 
 function moneyBRL(v) {
   if (v === null || v === undefined || isNaN(v)) return 'R$ 0,00';
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
-
 function statusPill(active) {
   const txt = active ? 'Ativo' : 'Inativo';
   const cls = active ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-700';
   return `<span class="px-2 py-1 rounded text-xs font-medium ${cls}">${txt}</span>`;
 }
-
 function escapeHtml(str) {
-  return String(str ?? '').replace(/[&<>"']/g, (m) => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
-  }[m]));
+  return String(str ?? '').replace(/[&<>"']/g, s => (
+    { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[s]
+  ));
 }
 
 function productRow(p) {
-  const thumb = p.image_url || p.image || p.thumbnail || '';
-  const category = p.category_name || p.category || '-';
-  const estoque = (p.stock_text ?? p.stock ?? '').toString() || '-';
+  const thumb = p.image_url
+    ? `<img src="${escapeHtml(p.image_url)}" class="w-14 h-14 object-cover rounded border">`
+    : `<div class="w-14 h-14 bg-stone-100 rounded border flex items-center justify-center text-stone-400">N/D</div>`;
   return `
-    <tr class="border-b last:border-b-0">
-      <td class="px-4 py-3">
+    <tr class="border-b last:border-0">
+      <td class="p-4">
         <div class="flex items-center gap-3">
-          ${thumb ? `<img src="${thumb}" class="w-12 h-12 rounded object-cover" alt="">` : `<div class="w-12 h-12 rounded bg-gray-200"></div>`}
+          ${thumb}
           <div>
-            <div class="font-medium text-gray-800">${p.name || p.title}</div>
-            ${p.subtitle ? `<div class="text-gray-500 text-xs">${p.subtitle}</div>` : ''}
+            <div class="font-medium text-stone-800">${escapeHtml(p.name)}</div>
+            <div class="text-xs text-stone-500">Categoria: ${escapeHtml(p.category_name || '')}</div>
           </div>
         </div>
       </td>
-      <td class="px-4 py-3 text-gray-700">${p.sku || '-'}</td>
-      <td class="px-4 py-3 text-gray-700">${category}</td>
-      <td class="px-4 py-3 text-gray-700">${moneyBRL(Number(p.base_price ?? p.price ?? 0))}</td>
-      <td class="px-4 py-3 text-gray-700">${estoque || '-'}</td>
-      <td class="px-4 py-3">${statusPill(!!(p.active ?? p.status ?? true))}</td>
-      <td class="px-4 py-3 text-right">
-        <button class="inline-flex items-center gap-1 text-sky-700 hover:text-sky-900 mr-3" data-edit="${p.id}">
-          <i data-lucide="square-pen" class="w-4 h-4"></i>
+      <td class="p-4 whitespace-nowrap">${moneyBRL(p.base_price ?? p.price)}</td>
+      <td class="p-4">${statusPill(!!p.is_active || !!p.active)}</td>
+      <td class="p-4 text-right">
+        <button class="text-amber-700 hover:text-amber-900 mr-3 btn-edit" data-id="${p.id}" title="Editar">
+          <i data-lucide="edit-3"></i>
         </button>
-        <button class="inline-flex items-center gap-1 text-red-600 hover:text-red-800" data-del="${p.id}">
-          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        <button class="text-red-600 hover:text-red-800 btn-del" data-id="${p.id}" title="Excluir">
+          <i data-lucide="trash-2"></i>
         </button>
       </td>
     </tr>
   `;
 }
 
-function renderTable(container, list) {
-  container.innerHTML = `
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-800">Gerenciar Produtos</h1>
-      <button id="btn-new" class="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded">
-        <i data-lucide="plus"></i> Novo Produto
-      </button>
-    </div>
-
-    <div class="bg-white rounded shadow">
-      <div class="p-4 border-b">
-        <input id="search-input" class="w-full px-3 py-2 border rounded" placeholder="Buscar por nome, SKU ou categoria..." />
-      </div>
-      <div class="overflow-x-auto">
-        <table class="min-w-full">
-          <thead class="bg-gray-50 text-left text-xs font-semibold text-gray-600">
-            <tr>
-              <th class="px-4 py-3">PRODUTO</th>
-              <th class="px-4 py-3">SKU</th>
-              <th class="px-4 py-3">CATEGORIA</th>
-              <th class="px-4 py-3">PREÇO BASE</th>
-              <th class="px-4 py-3">ESTOQUE</th>
-              <th class="px-4 py-3">STATUS</th>
-              <th class="px-4 py-3 text-right">AÇÕES</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-products" class="text-sm"></tbody>
-        </table>
-      </div>
+function renderTable(holder, list) {
+  holder.innerHTML = `
+    <div class="border rounded overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-stone-50 text-stone-600">
+          <tr>
+            <th class="text-left p-3 font-medium">Produto</th>
+            <th class="text-left p-3 font-medium">Preço Base</th>
+            <th class="text-left p-3 font-medium">Status</th>
+            <th class="text-right p-3 font-medium">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="rows">${list.map(productRow).join('')}</tbody>
+      </table>
     </div>
   `;
-
-  const tbody = container.querySelector('#tbody-products');
-  tbody.innerHTML = list.map(productRow).join('');
-
-  const doFilter = () => {
-    const q = (container.querySelector('#search-input').value || '').toLowerCase();
-    const filtered = list.filter(p => {
-      const name = (p.name || p.title || '').toLowerCase();
-      const sku = (p.sku || '').toLowerCase();
-      const cat = (p.category_name || p.category || '').toLowerCase();
-      return name.includes(q) || sku.includes(q) || cat.includes(q);
-    });
-    tbody.innerHTML = filtered.map(productRow).join('');
-    if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
-  };
-  container.querySelector('#search-input').addEventListener('input', doFilter);
-
-  // Botão "Novo Produto"
-  container.querySelector('#btn-new').addEventListener('click', () => openFormModal());
-
-  // === Event delegation para Editar/Excluir ===
-  if (!container._productsDelegationAttached) {
-    container._productsDelegationAttached = true;
-    container.addEventListener('click', async (e) => {
-      const btn = e.target.closest('button');
-      if (!btn) return;
-
-      const editId = btn.getAttribute('data-edit');
-      if (editId) {
-        try {
-          let product = null;
-          try {
-            product = await api.get(`products/${editId}`);
-          } catch {
-            product = list.find(p => String(p.id) === String(editId)) || { id: editId };
-          }
-          openFormModal(product);
-        } catch (err) {
-          showToast(err?.message || 'Falha ao abrir editor');
-        }
-        return;
-      }
-
-      const delId = btn.getAttribute('data-del');
-      if (delId) {
-        // Abre modal de confirmação (novo)
-        let product = list.find(p => String(p.id) === String(delId)) || { id: delId };
-        try {
-          // tenta pegar dados atualizados (opcional)
-          product = await api.get(`products/${delId}`).catch(() => product);
-        } catch {}
-        openDeleteModal(container, product);
-        return;
-      }
-    });
-  }
-
   if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
 }
 
-function formHTML(p = {}) {
-  const id = p.id || '';
-  const name = p.name || p.title || '';
-  const sku = p.sku || '';
-  const category_id = p.category_id || '';
+// --- Form ---
+function formHTML(p) {
+  p = p || {};
+  const id = p.id ?? '';
+  const name = p.name ?? '';
+  const sku = p.sku ?? '';
+  const category_id = p.category_id ?? '';
   const base_price = p.base_price ?? p.price ?? '';
-  const stock_text = p.stock_text ?? p.stock ?? '';
-  const image_url = p.image_url || p.image || '';
-  const active = (p.active ?? p.status ?? true) ? 'checked' : '';
+  const image_url = p.image_url ?? '';
+  const active = (p.is_active ?? p.active ?? true) ? 'checked' : '';
 
   return `
     <form id="product-form" class="space-y-4">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm mb-1">Nome</label>
-          <input name="name" required class="w-full px-3 py-2 border rounded" value="${name}">
+          <input name="name" required class="w-full px-3 py-2 border rounded" value="${escapeHtml(name)}">
         </div>
         <div>
-          <label class="block text-sm mb-1">SKU</label>
-          <input name="sku" class="w-full px-3 py-2 border rounded" value="${sku}">
+          <label class="block text-sm mb-1">SKU (opcional)</label>
+          <input name="sku" class="w-full px-3 py-2 border rounded" value="${escapeHtml(sku)}">
         </div>
         <div>
           <label class="block text-sm mb-1">Categoria</label>
-          <select name="category_id" class="w-full px-3 py-2 border rounded"></select>
+          <select name="category_id" required class="w-full px-3 py-2 border rounded">
+            <option value="">Carregando...</option>
+          </select>
         </div>
         <div>
           <label class="block text-sm mb-1">Preço Base</label>
-          <input name="base_price" type="number" step="0.01" class="w-full px-3 py-2 border rounded" value="${base_price}">
+          <input name="base_price" required class="w-full px-3 py-2 border rounded" placeholder="Ex.: 65,00" value="${escapeHtml(base_price)}">
         </div>
-        <div>
-          <label class="block text-sm mb-1">Estoque</label>
-          <input name="stock_text" class="w-full px-3 py-2 border rounded" value="${stock_text}">
-        </div>
-        <div>
+        <div class="md:col-span-2">
           <label class="block text-sm mb-1">Imagem (URL)</label>
-          <input name="image_url" class="w-full px-3 py-2 border rounded" value="${image_url}">
+          <input name="image_url" class="w-full px-3 py-2 border rounded" value="${escapeHtml(image_url)}">
         </div>
         <div class="flex items-center gap-2">
           <input id="active" type="checkbox" ${active}>
@@ -195,85 +113,95 @@ function formHTML(p = {}) {
 async function openFormModal(product = null) {
   showModal({
     title: product ? 'Editar Produto' : 'Novo Produto',
-    contentHtml: formHTML(product),
+    contentHtml: formHTML(product || {}),
     footerHtml: `
-      <button id="btn-cancel" class="px-4 py-2 rounded border mr-2">Cancelar</button>
-      <button id="btn-save" class="px-4 py-2 rounded bg-amber-600 text-white">Salvar</button>
+      <button id="btn-cancel" type="button" class="px-4 py-2 rounded border mr-2">Cancelar</button>
+      <button id="btn-save" type="button" class="px-4 py-2 rounded bg-amber-600 text-white">Salvar</button>
     `
   });
 
-  // Carrega categorias no <select>
   const $form = document.getElementById('product-form');
   const $cat = $form.querySelector('select[name=category_id]');
+
   try {
     const categories = await api.get('categories');
-    $cat.innerHTML = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    $cat.innerHTML = categories.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+    if (product?.category_id) $cat.value = String(product.category_id);
   } catch {
-    $cat.innerHTML = '<option value="">Sem categorias</option>';
+    $cat.innerHTML = `<option value="">Falha ao carregar</option>`;
   }
-  if (product?.category_id) $cat.value = product.category_id;
 
   document.getElementById('btn-cancel').addEventListener('click', closeModal);
+
   document.getElementById('btn-save').addEventListener('click', async () => {
     const fd = new FormData($form);
-    const payload = Object.fromEntries(fd.entries());
-    payload.active = document.getElementById('active').checked;
-    payload.base_price = parseFloat(payload.base_price || 0);
-    if (!payload.name) { alert('Informe o nome'); return; }
+    const payload = {
+      name: fd.get('name')?.toString().trim(),
+      category_id: Number(fd.get('category_id') || 0),
+      base_price: fd.get('base_price')?.toString().trim(),
+      image_url: fd.get('image_url')?.toString().trim() || null,
+      active: document.getElementById('active').checked ? 1 : 0,
+    };
 
-    if (payload.id) {
-      const id = payload.id;
-      delete payload.id;
-      await api.put(`products/${id}`, payload);
-      showToast('Produto atualizado');
-    } else {
-      await api.post('products', payload);
-      showToast('Produto criado');
+    if (!payload.name) return showToast('Informe o nome do produto.', 'error');
+    if (!payload.category_id) return showToast('Selecione uma categoria.', 'error');
+    if (!payload.base_price) return showToast('Informe o preço base.', 'error');
+
+    try {
+      // Aceita tanto payload cru quanto {data: {...}}
+      const result = product && product.id
+        ? await api.put(`products/${product.id}`, payload)
+        : await api.post('products', payload);
+
+      const row = result?.data ?? result ?? {};
+      if (row?.error) throw new Error(row.error);
+
+      showToast(product && product.id ? 'Produto atualizado' : 'Produto criado');
+      closeModal();
+
+      const holder = document.getElementById('list-holder');
+      renderSpinner(holder);
+      const list = await api.get('products');
+      renderTable(holder, list);
+    } catch (err) {
+      showToast(err?.message || 'Falha ao salvar.', 'error');
     }
-    closeModal();
-    const root = document.getElementById('content-root');
-    init(root);
   });
 }
 
-/* ===== NOVO: Modal de confirmação de exclusão ===== */
-function openDeleteModal(container, product) {
-  const name = product?.name || product?.title || 'este produto';
-  const sku = product?.sku ? ` (SKU ${escapeHtml(product.sku)})` : '';
+function openDeleteModal(id) {
   showModal({
-    title: 'Excluir produto',
-    contentHtml: `
-      <div class="space-y-3">
-        <p class="text-sm text-gray-700">
-          Tem certeza que deseja excluir <strong>${escapeHtml(name)}</strong>${sku}?
-        </p>
-        <p class="text-xs text-gray-500">Esta ação não pode ser desfeita.</p>
-      </div>
-    `,
+    title: 'Excluir Produto',
+    contentHtml: `<p class="text-stone-700">Tem certeza que deseja excluir este produto?</p>`,
     footerHtml: `
-      <button id="btn-cancel-del" class="px-4 py-2 rounded border mr-2">Cancelar</button>
-      <button id="btn-confirm-del" class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700">Excluir</button>
-    `
+      <button id="btn-cancel" type="button" class="px-4 py-2 rounded border mr-2">Cancelar</button>
+      <button id="btn-confirm-del" type="button" class="px-4 py-2 rounded bg-red-600 text-white">Excluir</button>
+    `,
   });
 
-  document.getElementById('btn-cancel-del').addEventListener('click', closeModal);
+  document.getElementById('btn-cancel').addEventListener('click', closeModal);
   document.getElementById('btn-confirm-del').addEventListener('click', async () => {
     try {
-      await api.del(`products/${product.id}`);
-      showToast('Produto excluído');
+      await api.del(`products/${id}`);
       closeModal();
-      init(container); // recarrega a tabela
+      showToast('Produto excluído');
+
+      const holder = document.getElementById('list-holder');
+      renderSpinner(holder);
+      const list = await api.get('products');
+      renderTable(holder, list);
     } catch (err) {
-      showToast(err?.message || 'Falha ao excluir produto');
+      showToast(err?.message || 'Não foi possível excluir.', 'error');
     }
   });
 }
 
+// ---------------- INIT ----------------
 export async function init(container) {
   container.innerHTML = `
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-3xl font-bold text-gray-800">Gerenciar Produtos</h1>
-      <button class="inline-flex items-center gap-2 bg-amber-600 text-white px-4 py-2 rounded" id="btn-new">
+      <button id="btn-new" type="button" class="inline-flex items-center gap-2 bg-amber-600 text-white px-4 py-2 rounded">
         <i data-lucide="plus"></i> Novo Produto
       </button>
     </div>
@@ -282,34 +210,48 @@ export async function init(container) {
     </div>
   `;
 
+  const newBtn = container.querySelector('#btn-new');
+  if (newBtn) {
+    newBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openFormModal(null);
+    });
+  }
+
+  if (!container.__productsBound) {
+    container.addEventListener('click', async (ev) => {
+      const editBtn = ev.target.closest && ev.target.closest('.btn-edit');
+      const delBtn  = ev.target.closest && ev.target.closest('.btn-del');
+
+      if (editBtn) {
+        ev.preventDefault();
+        const id = Number(editBtn.dataset.id);
+        if (!id) return;
+        try {
+          const p = await api.get(`products/${id}`);
+          return openFormModal(p);
+        } catch {
+          showToast('Falha ao carregar produto.', 'error');
+        }
+      }
+
+      if (delBtn) {
+        ev.preventDefault();
+        const id = Number(delBtn.dataset.id);
+        if (!id) return;
+        return openDeleteModal(id);
+      }
+    });
+    container.__productsBound = true;
+  }
+
   const holder = container.querySelector('#list-holder');
   renderSpinner(holder);
   try {
-    // Tolerante: tanto 'products' quanto 'produtos'
-    let list;
-    try {
-      list = await api.get('products');
-    } catch {
-      list = await api.get('produtos');
-    }
-    // Normaliza campos para exibição
-    list = (list || []).map(p => ({
-      id: p.id ?? p.product_id ?? p.codigo,
-      name: p.name ?? p.nome,
-      sku: p.sku ?? p.codigo_sku,
-      category_id: p.category_id ?? p.categoria_id,
-      category_name: p.category_name ?? p.categoria,
-      base_price: p.base_price ?? p.preco_base,
-      stock_text: p.stock_text ?? p.estoque,
-      active: p.active ?? (p.status === 'Ativo' ? true : p.status === 'Inativo' ? false : p.status),
-      image_url: p.image_url ?? p.imagem,
-    }));
-    holder.innerHTML = '';
-    renderTable(container, list);
+    const list = await api.get('products');
+    renderTable(holder, list);
   } catch (err) {
-    holder.innerHTML = `<div class="text-red-600">Falha ao carregar produtos. ${err?.message || ''}</div>`;
+    holder.innerHTML = `<div class="text-red-600">Falha ao carregar produtos. ${escapeHtml(err?.message || '')}</div>`;
   }
-
-  container.querySelector('#btn-new').addEventListener('click', () => openFormModal());
   if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
 }

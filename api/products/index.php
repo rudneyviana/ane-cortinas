@@ -14,37 +14,22 @@ if (Request::getMethod() === 'OPTIONS') {
     Response::send(200);
 }
 
-$method = Request::getMethod();
-$db     = Database::getInstance();
-
-// /api/products/123 -> index.php?id=123 (via .htaccess)
-$id = isset($_GET['id']) ? (int)$_GET['id'] : null;
-
-/** Normaliza valores monetários vindos como "R$ 1.234,56" ou "1234.56" */
 function parse_money($val) {
     if ($val === null) return null;
     $s = trim((string)$val);
     if ($s === '') return null;
-
-    // Remove "R$", espaços e outros símbolos
     $s = str_replace(['R$', ' '], '', $s);
-
-    // Se tem ponto e vírgula, assume BR: milhar . ; decimal ,
     if (strpos($s, '.') !== false && strpos($s, ',') !== false) {
-        $s = str_replace('.', '', $s);    // remove milhares
-        $s = str_replace(',', '.', $s);   // decimal ponto
-    } else if (strpos($s, ',') !== false) {
-        // Só vírgula -> decimal
+        $s = str_replace('.', '', $s);
+        $s = str_replace(',', '.', $s);
+    } elseif (strpos($s, ',') !== false) {
         $s = str_replace(',', '.', $s);
     }
-    // Agora $s deve estar em formato 1234.56
     if (!is_numeric($s)) return null;
     return (float)$s;
 }
 
-/** Formata um produto para garantir presença de base_price */
 function normalize_product_row(array $row) {
-    // Garante as duas chaves com o mesmo valor
     if (isset($row['price'])) {
         $row['base_price'] = $row['price'];
     } elseif (isset($row['base_price'])) {
@@ -52,18 +37,16 @@ function normalize_product_row(array $row) {
     } else {
         $row['price'] = $row['base_price'] = 0.0;
     }
-    // Converte 0/1 de is_active para int
     if (isset($row['is_active'])) {
         $row['is_active'] = (int)$row['is_active'];
     }
     return $row;
 }
 
-function fetchOne(PDO $db, int $id) {
+function fetchOne(PDO $db, int $id): ?array {
     $sql = "
         SELECT 
             p.*,
-            p.price AS base_price,            -- espelho
             c.name AS category_name,
             (
                 SELECT pi.image_url
@@ -73,21 +56,36 @@ function fetchOne(PDO $db, int $id) {
                 LIMIT 1
             ) AS image_url
         FROM products p
-        JOIN categories c ON c.id = p.category_id
+        LEFT JOIN categories c ON c.id = p.category_id
         WHERE p.id = :id
         LIMIT 1
     ";
     $st = $db->prepare($sql);
     $st->execute(['id' => $id]);
-    $row = $st->fetch();
+    $row = $st->fetch(PDO::FETCH_ASSOC);
     return $row ? normalize_product_row($row) : null;
 }
 
-function fetchList(PDO $db, array $filters = []) {
+function fetchList(PDO $db, array $filters = []): array {
+    $where = [];
+    $params = [];
+
+    if (!empty($filters['category_id'])) {
+        $where[] = 'p.category_id = :category_id';
+        $params['category_id'] = (int)$filters['category_id'];
+    }
+    if ($filters['active'] !== null && $filters['active'] !== '') {
+        $where[] = 'p.is_active = :active';
+        $params['active'] = (int)!!$filters['active'];
+    }
+    if (!empty($filters['q'])) {
+        $where[] = '(p.name LIKE :q OR p.description LIKE :q)';
+        $params['q'] = '%' . $filters['q'] . '%';
+    }
+
     $sql = "
         SELECT 
             p.*,
-            p.price AS base_price,            -- espelho
             c.name AS category_name,
             (
                 SELECT pi.image_url
@@ -97,34 +95,23 @@ function fetchList(PDO $db, array $filters = []) {
                 LIMIT 1
             ) AS image_url
         FROM products p
-        JOIN categories c ON c.id = p.category_id
+        LEFT JOIN categories c ON c.id = p.category_id
+        " . (count($where) ? ('WHERE ' . implode(' AND ', $where)) : '') . "
+        ORDER BY p.id DESC
     ";
-    $where  = [];
-    $params = [];
-
-    if (isset($filters['category_id']) && $filters['category_id'] !== '') {
-        $where[]               = 'p.category_id = :category_id';
-        $params['category_id'] = (int)$filters['category_id'];
-    }
-    if (isset($filters['active']) && $filters['active'] !== '') {
-        $where[]            = 'p.is_active = :active';
-        $params['active']   = (int)!!$filters['active'];
-    }
-    if (!empty($filters['q'])) {
-        $where[]          = 'p.name LIKE :q';
-        $params['q']      = '%'.$filters['q'].'%';
-    }
-
-    if ($where) $sql .= ' WHERE '.implode(' AND ', $where);
-    $sql .= ' ORDER BY p.id DESC';
-
     $st = $db->prepare($sql);
     $st->execute($params);
-    $rows = $st->fetchAll();
+    $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
     return array_map('normalize_product_row', $rows);
 }
 
 try {
+    $db = Database::getInstance();
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    $method = Request::getMethod();
+    $id     = isset($_GET['id']) ? (int)$_GET['id'] : null;
+
     if ($method === 'GET') {
         if ($id) {
             $row = fetchOne($db, $id);
@@ -148,118 +135,109 @@ try {
         $category_id = (int)($data['category_id'] ?? 0);
         $active      = isset($data['active']) ? (int)!!$data['active'] : 1;
 
-        if ($name === '' || !$category_id) {
-            Response::send(400, ['error' => 'Nome e categoria são obrigatórios.']);
-        }
+        if ($name === '') Response::send(400, ['error' => 'O nome é obrigatório.']);
+        if ($category_id <= 0) Response::send(400, ['error' => 'Categoria inválida.']);
+        if ($priceFloat === null) Response::send(400, ['error' => 'Preço inválido.']);
 
         $st = $db->prepare("
             INSERT INTO products (name, description, price, category_id, is_active)
             VALUES (:name, :description, :price, :category_id, :is_active)
         ");
-        $st->execute([
+        $ok = $st->execute([
             'name'        => $name,
             'description' => $data['description'] ?? null,
-            'price'       => $priceFloat ?? 0.0,
+            'price'       => $priceFloat,
             'category_id' => $category_id,
             'is_active'   => $active,
         ]);
+        if (!$ok) {
+            $err = $st->errorInfo();
+            Response::send(400, ['error' => 'Falha ao inserir produto.', 'detail' => $err[2] ?? null]);
+        }
+
         $newId = (int)$db->lastInsertId();
+        if ($newId <= 0) Response::send(500, ['error' => 'Falha ao obter o ID do novo produto.']);
 
         if (!empty($data['image_url'])) {
-            $st = $db->prepare("
-                INSERT INTO product_images (product_id, image_url, sort_order)
-                VALUES (:pid, :url, 1)
-            ");
-            $st->execute(['pid' => $newId, 'url' => $data['image_url']]);
+            $sti = $db->prepare("INSERT INTO product_images (product_id, image_url, sort_order) VALUES (:pid, :url, 1)");
+            $sti->execute(['pid' => $newId, 'url' => $data['image_url']]);
         }
 
         $row = fetchOne($db, $newId);
-        Response::send(201, $row);
+        Response::send(201, $row ?: ['id' => $newId]); // garante um corpo com id
     }
 
     if ($method === 'PUT' && $id) {
-        $data        = Request::getBody();
-        $fields      = [];
-        $params      = ['id' => $id];
+        $data   = Request::getBody();
+        $fields = [];
+        $params = ['id' => $id];
 
         if (isset($data['name'])) {
-            $fields[]         = 'name = :name';
-            $params['name']   = trim((string)$data['name']);
+            $fields[] = 'name = :name';
+            $params['name'] = trim((string)$data['name']);
         }
 
-        // ATENÇÃO: só atualiza preço se veio um valor válido
         $priceCandidate = $data['base_price'] ?? $data['price'] ?? null;
         $priceFloat     = parse_money($priceCandidate);
         if ($priceFloat !== null) {
-            $fields[]        = 'price = :price';
+            $fields[] = 'price = :price';
             $params['price'] = $priceFloat;
         }
 
         if (isset($data['category_id'])) {
-            $fields[]              = 'category_id = :category_id';
+            $fields[] = 'category_id = :category_id';
             $params['category_id'] = (int)$data['category_id'];
         }
+
         if (isset($data['active'])) {
-            $fields[]            = 'is_active = :is_active';
-            $params['is_active'] = (int)!!$data['active'];
+            $fields[] = 'is_active = :active';
+            $params['active'] = (int)!!$data['active'];
+        }
+
+        if (isset($data['description'])) {
+            $fields[] = 'description = :description';
+            $params['description'] = $data['description'];
         }
 
         if ($fields) {
-            $sql = 'UPDATE products SET '.implode(', ', $fields).' WHERE id = :id';
+            $sql = 'UPDATE products SET ' . implode(', ', $fields) . ' WHERE id = :id';
             $st  = $db->prepare($sql);
             $st->execute($params);
         }
 
-        // Upsert da primeira imagem
-        if (!empty($data['image_url'])) {
-            $st = $db->prepare("
-                SELECT id FROM product_images
-                WHERE product_id = :pid
-                ORDER BY sort_order ASC, id ASC
-                LIMIT 1
-            ");
-            $st->execute(['pid' => $id]);
-            $img = $st->fetch();
+        if (array_key_exists('image_url', $data)) {
+            $first = $db->prepare("SELECT id FROM product_images WHERE product_id = :id ORDER BY sort_order ASC, id ASC LIMIT 1");
+            $first->execute(['id' => $id]);
+            $imgId = $first->fetchColumn();
 
-            if ($img) {
-                $st = $db->prepare("UPDATE product_images SET image_url = :url WHERE id = :img_id");
-                $st->execute(['url' => $data['image_url'], 'img_id' => $img['id']]);
-            } else {
-                $st = $db->prepare("
-                    INSERT INTO product_images (product_id, image_url, sort_order)
-                    VALUES (:pid, :url, 1)
-                ");
-                $st->execute(['pid' => $id, 'url' => $data['image_url']]);
+            if ($data['image_url']) {
+                if ($imgId) {
+                    $up = $db->prepare("UPDATE product_images SET image_url = :url WHERE id = :imgId");
+                    $up->execute(['url' => $data['image_url'], 'imgId' => $imgId]);
+                } else {
+                    $ins = $db->prepare("INSERT INTO product_images (product_id, image_url, sort_order) VALUES (:pid, :url, 1)");
+                    $ins->execute(['pid' => $id, 'url' => $data['image_url']]);
+                }
+            } elseif ($imgId) {
+                $del = $db->prepare("DELETE FROM product_images WHERE id = :imgId");
+                $del->execute(['imgId' => $imgId]);
             }
         }
 
         $row = fetchOne($db, $id);
-        if (!$row) Response::send(404, ['error' => 'Produto não encontrado.']);
-        Response::send(200, $row);
+        Response::send(200, $row ?: ['id' => $id]);
     }
 
-    // DELETE /api/products/{id}
-    if (
-        ($method === 'DELETE' && $id) ||
-        ($method === 'POST' && $id && ($b = Request::getBody()) && isset($b['_method']) && strtoupper($b['_method']) === 'DELETE')
-    ) {
-        // Verifica se existe
-        $row = fetchOne($db, $id);
-        if (!$row) {
-            Response::send(404, ['error' => 'Produto não encontrado.']);
-        }
-
+    if ($method === 'DELETE' && $id) {
         try {
-            // Observação: tabelas de detalhes/imagens têm ON DELETE CASCADE
+            $db->prepare("DELETE FROM product_images WHERE product_id = :id")->execute(['id' => $id]);
             $st = $db->prepare("DELETE FROM products WHERE id = :id");
             $st->execute(['id' => $id]);
-            Response::send(204); // sem corpo
+            if ($st->rowCount() === 0) Response::send(404, ['error' => 'Produto não encontrado.']);
+            Response::send(204, null);
         } catch (PDOException $e) {
-            // Chave estrangeira (p.ex., produto já usado em pedidos)
             if ($e->getCode() === '23000') {
-                Response::send(409, [
-                    'error' => 'Não é possível excluir: o produto está vinculado a pedidos. Desative-o em vez de excluir.'
-                ]);
+                Response::send(409, ['error' => 'Não é possível excluir: o produto está vinculado a pedidos. Desative-o em vez de excluir.']);
             }
             throw $e;
         }
