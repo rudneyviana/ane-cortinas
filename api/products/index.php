@@ -69,7 +69,7 @@ function fetchCushionPendantDetails(PDO $db, int $id): ?array {
     return $row ?: null;
 }
 
-function fetchOne(PDO $db, int $id, bool $onlyActive = false): ?array {
+function fetchOne(PDO $db, int $id): ?array {
     $sql = "
         SELECT 
             p.*,
@@ -84,7 +84,6 @@ function fetchOne(PDO $db, int $id, bool $onlyActive = false): ?array {
         FROM products p
         JOIN categories c ON c.id = p.category_id
        WHERE p.id = :id
-       " . ($onlyActive ? "AND p.is_active = 1" : "") . "
        LIMIT 1
     ";
     $st = $db->prepare($sql);
@@ -139,6 +138,22 @@ function fetchList(PDO $db, array $filters = []): array {
         $params['q'] = '%' . $filters['q'] . '%';
     }
 
+    // Ordenação
+    $orderBy = 'p.id DESC'; // padrão anterior (mantido)
+    $sort = isset($filters['sort']) ? strtolower(trim((string)$filters['sort'])) : null;
+    if ($sort === 'price_asc') {
+        $orderBy = 'p.price ASC, p.id DESC';
+    } elseif ($sort === 'price_desc') {
+        $orderBy = 'p.price DESC, p.id DESC';
+    } elseif ($sort === 'oldest') {
+        $orderBy = 'p.id ASC';
+    } elseif ($sort === 'newest') {
+        $orderBy = 'p.id DESC';
+    } elseif ($sort === 'cortinas_first') {
+        // coloca a categoria "Cortinas" primeiro e mantém o restante do comportamento
+        $orderBy = 'CASE WHEN LOWER(c.name) = "cortinas" THEN 0 ELSE 1 END, p.id DESC';
+    }
+
     $sql = "
         SELECT 
             p.*,
@@ -153,7 +168,7 @@ function fetchList(PDO $db, array $filters = []): array {
         FROM products p
         JOIN categories c ON c.id = p.category_id
         " . (count($where) ? ('WHERE ' . implode(' AND ', $where)) : '') . "
-        ORDER BY p.id DESC
+        ORDER BY $orderBy
     ";
     $st = $db->prepare($sql);
     $st->execute($params);
@@ -171,8 +186,7 @@ try {
 
     if ($method === 'GET') {
         if ($id) {
-            $onlyActive = isset($_GET['only_active']) && (int)$_GET['only_active'] === 1;
-            $row = fetchOne($db, $id, $onlyActive);
+            $row = fetchOne($db, $id);
             if (!$row) Response::send(404, ['error' => 'Produto não encontrado.']);
             Response::send(200, $row);
         } else {
@@ -180,6 +194,7 @@ try {
                 'category_id' => $_GET['category_id'] ?? null,
                 'active'      => $_GET['active'] ?? null,
                 'q'           => $_GET['q'] ?? null,
+                'sort'        => $_GET['sort'] ?? null, // <— novo
             ];
             $rows = fetchList($db, $filters);
             Response::send(200, $rows);
@@ -224,7 +239,7 @@ try {
                ->execute(['pid' => $newId, 'v' => trim((string)$data['stock_text'])]);
         }
 
-        $row = fetchOne($db, $newId, false);
+        $row = fetchOne($db, $newId);
         Response::send(201, $row);
     }
 
@@ -311,7 +326,7 @@ try {
             }
         }
 
-        $row = fetchOne($db, $id, false);
+        $row = fetchOne($db, $id);
         Response::send(200, $row);
     }
 

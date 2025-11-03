@@ -24,19 +24,17 @@ async function apiRequest(endpoint, method = 'GET', data = null, requiresAuth = 
         const responseText = await response.text();
 
         if (!response.ok) {
-            let errorBody;
-            try { errorBody = JSON.parse(responseText); }
-            catch { errorBody = { error: 'An unknown API error occurred.' }; }
-            const errorMessage = errorBody.error || `HTTP error! status: ${response.status}`;
-            throw new Error(errorMessage);
+            let body;
+            try { body = JSON.parse(responseText); } catch { body = { error: 'An unknown API error occurred.' }; }
+            const msg = body.error || `HTTP error! status: ${response.status}`;
+            throw new Error(msg);
         }
 
         if (response.status === 204) return null;
-        if (!responseText.trim()) return null;
+        if (responseText.trim() === '') return null;
 
-        try {
-            return JSON.parse(responseText);
-        } catch {
+        try { return JSON.parse(responseText); }
+        catch {
             console.error('Error parsing JSON:', responseText);
             throw new Error('Invalid JSON response from server');
         }
@@ -46,42 +44,42 @@ async function apiRequest(endpoint, method = 'GET', data = null, requiresAuth = 
     }
 }
 
-// LISTA (SITE): por padrão mostra apenas produtos ativos.
-// Se quiser listar tudo, chame explicitamente com { active: '' } ou { active: null }.
+// ===== LISTAGEM P/ LOJA =====
+// Por padrão, a loja pede somente ativos e ordena com cortinas primeiro.
+// (O Admin não usa este arquivo; ele usa /admin/js/api_service.js)
 export async function getProducts(filters = {}) {
-    const params = new URLSearchParams();
-    for (const [k, v] of Object.entries(filters)) {
-        if (v !== undefined && v !== null && v !== '') params.set(k, v);
-    }
-    if (!params.has('active')) params.set('active', '1'); // trava vitrine para ativos
-
-    const queryString = params.toString() ? `?${params.toString()}` : '';
+    const defaults = {
+        active: 1,
+        sort: 'cortinas_first',
+    };
+    const merged = { ...defaults, ...filters };
+    const params = new URLSearchParams(merged);
+    const queryString = params.toString() ? `?${params}` : '';
     const url = `${API_BASE_URL}/products/index.php${queryString}`;
 
     try {
         const resp = await fetch(url);
         if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
         return await resp.json();
-    } catch (err) {
-        console.error(`API request to ${url} failed:`, err);
-        throw err;
+    } catch (error) {
+        console.error(`API request to ${url} failed:`, error);
+        throw error;
     }
 }
 
-// DETALHE (SITE): só retorna se estiver ativo (404 se inativo)
 export async function getProductById(id) {
-    const url = `${API_BASE_URL}/products/index.php?id=${encodeURIComponent(id)}&only_active=1`;
+    const url = `${API_BASE_URL}/products/single.php?id=${id}`;
     try {
-        const resp = await fetch(url);
-        if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
-        return await resp.json();
-    } catch (err) {
-        console.error(`API request to ${url} failed:`, err);
-        throw err;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    } catch (error) {
+        console.error(`API request to ${url} failed:`, error);
+        throw error;
     }
 }
 
-// Outras rotas já existentes
+// ==== demais (inalterados) ====
 export async function getCategories() {
     return apiRequest('categories/index', 'GET', null, false);
 }

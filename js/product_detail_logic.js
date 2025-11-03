@@ -4,138 +4,266 @@ import { addToCart } from './cart.js';
 
 let currentProduct = null;
 
-function moneyBRL(n) {
-  const v = Number(n ?? 0);
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const money = (v) => BRL.format(Number.isFinite(+v) ? +v : 0);
+
+const $ = (id) => document.getElementById(id);
+
+function mainImageFrom(p) {
+  if (p?.image_url) return p.image_url;
+  const first = p?.images?.length ? p.images[0].image_url : null;
+  return first || '/ane-cortinas/images/placeholder.png';
 }
 
-// --- Galeria (apenas uma imagem, sem miniaturas) ---
-function galleryHTML(images) {
-  const main = images?.[0]?.image_url || images?.[0] || null;
+function isCurtain(p) {
+  const cat = (p?.category_name || '').toLowerCase();
+  if (cat === 'cortinas') return true;
+  return (p?.details?.type) === 'curtain';
+}
 
-  if (!main) {
-    return `
-      <div class="aspect-square w-full max-w-[560px] mx-auto overflow-hidden rounded-lg border bg-stone-100"></div>
-    `;
+/* ---------- Toast (com fallback) ---------- */
+function toast(msg, type = 'success') {
+  // Se existir um showToast global, usa.
+  if (typeof window.showToast === 'function') {
+    window.showToast(msg, type);
+    return;
   }
-
-  return `
-    <div class="aspect-square w-full max-w-[560px] mx-auto overflow-hidden rounded-lg border bg-white">
-      <img src="${main}" alt="" class="w-full h-full object-cover object-center select-none" />
-    </div>
+  // Fallback minimalista
+  let wrap = $('mini-toast-wrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'mini-toast-wrap';
+    wrap.style.cssText = `
+      position: fixed; right: 16px; top: 16px; z-index: 9999;
+      display: flex; flex-direction: column; gap: 8px;
+      pointer-events: none;
+    `;
+    document.body.appendChild(wrap);
+  }
+  const el = document.createElement('div');
+  el.textContent = msg;
+  el.style.cssText = `
+    padding: 10px 14px; border-radius: 8px; color: #fff; font: 500 14px/1.2 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    box-shadow: 0 6px 18px rgba(0,0,0,.18); pointer-events: auto; opacity: 0; transform: translateY(-6px);
+    transition: opacity .2s ease, transform .2s ease;
+    background: ${type === 'error' ? '#dc2626' : '#16a34a'};
   `;
+  wrap.appendChild(el);
+  requestAnimationFrame(() => {
+    el.style.opacity = '1';
+    el.style.transform = 'translateY(0)';
+  });
+  setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(-6px)';
+    setTimeout(() => el.remove(), 220);
+  }, 2200);
 }
 
-// --- Formulário de detalhes (apenas para cortinas) ---
-function detailsFormHTML(p) {
-  const d = p.details || {};
-  const isCurtain = (d.type === 'curtain') || (String(p.category_name || '').toLowerCase() === 'cortinas');
+function curtainDefaults(p) {
+  const d = p?.details || {};
+  return {
+    rail_type: d.rail_type || 'Varão Branco',
+    rail_color: d.rail_color || 'Branco',
+    rail_width: Number(d.rail_width ?? 2.00),
+    height_cm: '',
+    width_cm: '',
+  };
+}
 
-  if (!isCurtain) return '';
-
-  const safe = v => (v === null || v === undefined ? '' : String(v));
-
+function renderCurtainFields(p) {
+  const c = curtainDefaults(p);
   return `
-    <form id="pd-form" class="space-y-4">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm text-stone-600 mb-1">Altura (cm)</label>
-          <input name="height" type="number" step="0.01" min="0" value="${safe(d.height)}" class="w-full px-3 py-2 border rounded" />
-        </div>
-        <div>
-          <label class="block text-sm text-stone-600 mb-1">Largura (cm)</label>
-          <input name="width" type="number" step="0.01" min="0" value="${safe(d.width)}" class="w-full px-3 py-2 border rounded" />
-        </div>
-        <div>
-          <label class="block text-sm text-stone-600 mb-1">Tipo de Trilho/Varão</label>
-          <input name="rail_type" value="${safe(d.rail_type)}" class="w-full px-3 py-2 border rounded" />
-        </div>
-        <div>
-          <label class="block text-sm text-stone-600 mb-1">Cor do Trilho/Varão</label>
-          <input name="rail_color" value="${safe(d.rail_color)}" class="w-full px-3 py-2 border rounded" />
-        </div>
-        <div>
-          <label class="block text-sm text-stone-600 mb-1">Largura do Trilho (m)</label>
-          <input name="rail_width" type="number" step="0.01" min="0" value="${safe(d.rail_width)}" class="w-full px-3 py-2 border rounded" />
-        </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm mb-1">Altura (cm)</label>
+        <input id="pd-height" type="number" min="0" step="1" class="w-full px-3 py-2 border rounded" value="${c.height_cm}">
       </div>
-    </form>
-  `;
-}
+      <div>
+        <label class="block text-sm mb-1">Largura (cm)</label>
+        <input id="pd-width" type="number" min="0" step="1" class="w-full px-3 py-2 border rounded" value="${c.width_cm}">
+      </div>
+    </div>
 
-function quantityHTML() {
-  return `
-    <div class="inline-flex items-center border rounded overflow-hidden">
-      <button id="qty-dec" class="px-3 py-2" type="button">−</button>
-      <input id="qty" type="number" min="1" value="1" class="w-14 text-center border-l border-r py-2">
-      <button id="qty-inc" class="px-3 py-2" type="button">+</button>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+      <div>
+        <label class="block text-sm mb-1">Tipo de Trilho/Varão</label>
+        <input id="pd-rail-type" class="w-full px-3 py-2 border rounded" value="${c.rail_type}">
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Cor do Trilho/Varão</label>
+        <input id="pd-rail-color" class="w-full px-3 py-2 border rounded" value="${c.rail_color}">
+      </div>
+    </div>
+
+    <div class="mt-3">
+      <label class="block text-sm mb-1">Largura do Trilho (m)</label>
+      <input id="pd-rail-width" type="number" min="0" step="0.01" class="w-full px-3 py-2 border rounded" value="${c.rail_width}">
     </div>
   `;
 }
 
-function renderProductDetail(p) {
-  const container = document.getElementById('product-detail-container');
-  const images = (p.images && p.images.length)
-    ? p.images
-    : (p.image_url ? [{ image_url: p.image_url }] : []);
+function renderQtyControls() {
+  return `
+    <div class="inline-flex items-center gap-1 border rounded">
+      <button id="pd-qty-dec" type="button" class="px-3 py-2 select-none">−</button>
+      <input id="pd-qty" type="number" min="1" step="1" value="1" class="w-14 text-center border-l border-r py-2">
+      <button id="pd-qty-inc" type="button" class="px-3 py-2 select-none">+</button>
+    </div>
+  `;
+}
+
+function renderDetail(p) {
+  const container = $('product-detail-container');
+  const img = mainImageFrom(p);
+  const curtain = isCurtain(p);
+  const skuHtml = p?.sku ? `<div class="text-sm text-stone-500 mt-1">SKU: ${p.sku}</div>` : '';
+  const desc = p?.description ? `<p class="text-stone-700 mt-4">${p.description}</p>` : '';
 
   container.innerHTML = `
-    <div class="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-2 gap-10">
-      <div id="pd-gallery">${galleryHTML(images)}</div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div>
+        <div class="w-full aspect-square rounded overflow-hidden bg-stone-100">
+          <img id="pd-main-img" src="${img}" alt="" class="w-full h-full object-cover">
+        </div>
+      </div>
 
       <div>
-        <h1 class="text-4xl font-extrabold text-stone-900 mb-2">${p.name}</h1>
-        ${p.sku ? `<div class="text-sm text-stone-500 mb-4">SKU: ${p.sku}</div>` : ''}
-        <div class="text-2xl font-semibold text-amber-700 mb-6">${moneyBRL(p.base_price ?? p.price)}</div>
-        ${p.description ? `<p class="text-stone-700 leading-relaxed mb-6">${p.description}</p>` : ''}
+        <h1 class="text-3xl font-bold text-stone-900">${p.name}</h1>
+        ${skuHtml}
+        <div class="text-2xl font-semibold text-amber-700 mt-3">${money(p.price)}</div>
+        ${desc}
 
-        ${detailsFormHTML(p)}
+        <div id="pd-opts" class="mt-5">
+          ${curtain ? renderCurtainFields(p) : ''}
+        </div>
 
-        <div class="mt-6 flex items-center gap-4">
-          ${quantityHTML()}
-          <button id="btn-add" class="inline-flex items-center gap-2 bg-amber-700 hover:bg-amber-800 text-white px-5 py-3 rounded">
-            <i data-lucide="shopping-cart"></i> Adicionar ao Carrinho
+        <div class="flex items-center gap-3 mt-6">
+          ${renderQtyControls()}
+          <button id="pd-add" type="button" class="px-5 py-3 rounded bg-amber-700 hover:bg-amber-800 text-white">
+            Adicionar ao Carrinho
           </button>
         </div>
       </div>
     </div>
   `;
 
-  // Quantidade
-  const qtyEl = document.getElementById('qty');
-  document.getElementById('qty-inc').addEventListener('click', () => {
-    qtyEl.value = Math.max(1, Number(qtyEl.value || 1) + 1);
+  // binds
+  const qtyEl = $('pd-qty');
+  $('pd-qty-dec').addEventListener('click', () => {
+    const n = Math.max(1, parseInt(qtyEl.value || '1', 10) - 1);
+    qtyEl.value = String(n);
   });
-  document.getElementById('qty-dec').addEventListener('click', () => {
-    qtyEl.value = Math.max(1, Number(qtyEl.value || 1) - 1);
-  });
-
-  // Adicionar ao carrinho
-  document.getElementById('btn-add').addEventListener('click', () => {
-    const qty = Math.max(1, Number(qtyEl.value || 1));
-    const form = document.getElementById('pd-form');
-    const extras = form ? Object.fromEntries(new FormData(form).entries()) : {};
-    const main = images?.[0]?.image_url || images?.[0] || null;
-
-    addToCart({
-      id: p.id,
-      name: p.name,
-      price: Number(p.base_price ?? p.price ?? 0),
-      image: main,
-      qty,
-      extras
-    });
+  $('pd-qty-inc').addEventListener('click', () => {
+    const n = Math.max(1, parseInt(qtyEl.value || '1', 10) + 1);
+    qtyEl.value = String(n);
   });
 
-  if (window.lucide?.createIcons) window.lucide.createIcons();
+  $('pd-add').addEventListener('click', onAddToCart);
 }
 
+function collectOptionsForCart(p) {
+  if (!isCurtain(p)) return {};
+
+  const height = Number($('pd-height')?.value || 0);
+  const width = Number($('pd-width')?.value || 0);
+  const railType = ($('pd-rail-type')?.value || '').trim();
+  const railColor = ($('pd-rail-color')?.value || '').trim();
+  const railWidth = Number($('pd-rail-width')?.value || 0);
+
+  return {
+    height_cm: Number.isFinite(height) && height > 0 ? height : null,
+    width_cm: Number.isFinite(width) && width > 0 ? width : null,
+    rail_type: railType || null,
+    rail_color: railColor || null,
+    rail_width_m: Number.isFinite(railWidth) && railWidth > 0 ? railWidth : null,
+  };
+}
+
+function fireCartUpdated() {
+  try { window.dispatchEvent(new CustomEvent('cart:updated')); } catch {}
+  try { window.dispatchEvent(new CustomEvent('cartUpdated')); } catch {}
+  try { window.dispatchEvent(new CustomEvent('cart-updated')); } catch {}
+  try { document.dispatchEvent(new CustomEvent('cart:updated')); } catch {}
+  try { window.updateCartUI?.(); } catch {}
+}
+
+function localCartFallback(item) {
+  try {
+    const key = 'cart';
+    const raw = localStorage.getItem(key);
+    const list = raw ? JSON.parse(raw) : [];
+    const idx = list.findIndex(
+      x => x.id === item.id && JSON.stringify(x.options || {}) === JSON.stringify(item.options || {})
+    );
+    if (idx >= 0) list[idx].quantity += item.quantity;
+    else list.push(item);
+    localStorage.setItem(key, JSON.stringify(list));
+    fireCartUpdated();
+    return true;
+  } catch (e) {
+    console.error('Local cart fallback failed', e);
+    return false;
+  }
+}
+
+async function onAddToCart(e) {
+  if (!currentProduct) return;
+  const btn = e.currentTarget;
+  const qty = Math.max(1, parseInt($('pd-qty')?.value || '1', 10));
+  const options = collectOptionsForCart(currentProduct);
+
+  const item = {
+    id: currentProduct.id,
+    name: currentProduct.name,
+    price: Number(currentProduct.price),
+    image_url: mainImageFrom(currentProduct),
+    quantity: qty,
+    sku: currentProduct.sku || null,
+    category: currentProduct.category_name || null,
+    options,
+  };
+
+  btn.disabled = true; btn.classList.add('opacity-70');
+
+  // 1) addToCart(item)
+  try {
+    const maybePromise = addToCart(item);
+    if (maybePromise?.then) await maybePromise;
+    toast('Produto adicionado ao carrinho.');
+    fireCartUpdated();
+    btn.disabled = false; btn.classList.remove('opacity-70');
+    return;
+  } catch {}
+
+  // 2) addToCart(product, qty, options)
+  try {
+    const maybePromise = addToCart(currentProduct, qty, options);
+    if (maybePromise?.then) await maybePromise;
+    toast('Produto adicionado ao carrinho.');
+    fireCartUpdated();
+    btn.disabled = false; btn.classList.remove('opacity-70');
+    return;
+  } catch (err) {
+    console.warn('addToCart signature not matched, using local fallback.', err);
+  }
+
+  // 3) Fallback localStorage
+  if (localCartFallback(item)) {
+    toast('Produto adicionado ao carrinho.');
+  } else {
+    toast('Não foi possível adicionar ao carrinho.', 'error');
+  }
+  btn.disabled = false; btn.classList.remove('opacity-70');
+}
+
+/* ---------- Bootstrap ---------- */
 document.addEventListener('DOMContentLoaded', async () => {
   initMain();
 
   const params = new URLSearchParams(window.location.search);
-  const productId = Number(params.get('id') || 0);
-  const container = document.getElementById('product-detail-container');
+  const productId = params.get('id');
+  const container = $('product-detail-container');
 
   if (!productId) {
     container.innerHTML = '<p class="text-center text-red-500">Produto não encontrado. ID inválido.</p>';
@@ -143,13 +271,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   try {
-    currentProduct = await getProductById(productId);
-    if (!currentProduct) {
+    const p = await getProductById(productId);
+    if (!p) {
       container.innerHTML = '<p class="text-center text-red-500">Produto não encontrado.</p>';
       return;
     }
-    renderProductDetail(currentProduct);
-  } catch (e) {
-    container.innerHTML = `<p class="text-center text-red-500">Erro ao carregar produto. ${e?.message || ''}</p>`;
+    currentProduct = p;
+    renderDetail(p);
+  } catch (err) {
+    console.error('Falha ao carregar produto:', err);
+    container.innerHTML = `<p class="text-center text-red-500">Falha ao carregar produto. ${err?.message || ''}</p>`;
   }
 });
