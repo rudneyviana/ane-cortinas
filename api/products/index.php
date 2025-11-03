@@ -69,7 +69,7 @@ function fetchCushionPendantDetails(PDO $db, int $id): ?array {
     return $row ?: null;
 }
 
-function fetchOne(PDO $db, int $id): ?array {
+function fetchOne(PDO $db, int $id, bool $onlyActive = false): ?array {
     $sql = "
         SELECT 
             p.*,
@@ -84,6 +84,7 @@ function fetchOne(PDO $db, int $id): ?array {
         FROM products p
         JOIN categories c ON c.id = p.category_id
        WHERE p.id = :id
+       " . ($onlyActive ? "AND p.is_active = 1" : "") . "
        LIMIT 1
     ";
     $st = $db->prepare($sql);
@@ -108,7 +109,6 @@ function fetchOne(PDO $db, int $id): ?array {
         $details['type'] = 'cushion_pendant';
         $details = array_merge($details, $cushPend);
     } else {
-        // Fallback: se for da categoria Cortinas, marcamos como 'curtain'
         if (isset($row['category_name']) && mb_strtolower($row['category_name']) === 'cortinas') {
             $details['type'] = 'curtain';
         }
@@ -171,7 +171,8 @@ try {
 
     if ($method === 'GET') {
         if ($id) {
-            $row = fetchOne($db, $id);
+            $onlyActive = isset($_GET['only_active']) && (int)$_GET['only_active'] === 1;
+            $row = fetchOne($db, $id, $onlyActive);
             if (!$row) Response::send(404, ['error' => 'Produto não encontrado.']);
             Response::send(200, $row);
         } else {
@@ -223,7 +224,7 @@ try {
                ->execute(['pid' => $newId, 'v' => trim((string)$data['stock_text'])]);
         }
 
-        $row = fetchOne($db, $newId);
+        $row = fetchOne($db, $newId, false);
         Response::send(201, $row);
     }
 
@@ -310,7 +311,7 @@ try {
             }
         }
 
-        $row = fetchOne($db, $id);
+        $row = fetchOne($db, $id, false);
         Response::send(200, $row);
     }
 

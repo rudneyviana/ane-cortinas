@@ -1,17 +1,15 @@
 // admin/js/views/products.js
 import * as api from '../api_service.js';
-import { showModal, closeModal, renderSpinner, showToast } from '../ui_service.js';
+import { showModal, closeModal, showToast } from '../ui_service.js';
 
 function moneyBRL(v) {
   const n = Number(v ?? 0);
   return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
-
 function statusPill(active) {
-  const on = !!active;
+  const on = !!(active || active === 1);
   return `<span class="px-2 py-1 rounded text-xs font-medium ${on ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-700'}">${on ? 'Ativo' : 'Inativo'}</span>`;
 }
-
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
 }
@@ -41,13 +39,14 @@ function productRow(p) {
       <td class="px-4 py-3 text-stone-700">${escapeHtml(String(stock))}</td>
       <td class="px-4 py-3">${statusPill(p.is_active ?? p.active)}</td>
       <td class="px-4 py-3 text-right">
-        <button class="text-amber-700 hover:text-amber-900 mr-3 btn-edit" data-id="${id}" title="Editar"><i data-lucide="square-pen"></i></button>
+        <button class="text-sky-700 hover:text-sky-900 mr-3 btn-edit" data-id="${id}" title="Editar"><i data-lucide="square-pen"></i></button>
         <button class="text-red-600 hover:text-red-800 btn-del" data-id="${id}" title="Excluir"><i data-lucide="trash-2"></i></button>
       </td>
     </tr>
   `;
 }
 
+/* ---------- Shell (estrutura fixa da página) ---------- */
 function renderShell(container) {
   container.innerHTML = `
     <div class="flex justify-between items-center mb-6">
@@ -81,28 +80,39 @@ function renderShell(container) {
   `;
 }
 
+/* ---------- Renderiza somente as linhas ---------- */
 function bindList(container, list) {
+  container.__productsList = Array.isArray(list) ? list : [];
   const rows = container.querySelector('#rows');
-  const render = (items) => {
-    rows.innerHTML = items.map(productRow).join('');
-    if (window.lucide?.createIcons) window.lucide.createIcons();
-  };
-  render(list);
-
-  const searchEl = container.querySelector('#search-input');
-  searchEl.addEventListener('input', () => {
-    const q = searchEl.value.toLowerCase();
-    const filtered = list.filter(p => {
-      const name = (p.name ?? '').toLowerCase();
-      const sku  = (p.sku ?? '').toLowerCase();
-      const cat  = (p.category_name ?? '').toLowerCase();
-      return name.includes(q) || sku.includes(q) || cat.includes(q);
-    });
-    render(filtered);
-  });
+  if (!rows) return;
+  rows.innerHTML = container.__productsList.map(productRow).join('');
+  if (window.lucide?.createIcons) window.lucide.createIcons();
 }
 
-/* ========= MODAL ========= */
+/* ---------- Busca incremental ---------- */
+function attachSearch(container) {
+  const input = container.querySelector('#search-input');
+  if (!input) return;
+  const doFilter = () => {
+    const q = (input.value || '').toLowerCase();
+    const base = container.__productsList || [];
+    const filtered = base.filter(p => {
+      const name = (p.name || '').toLowerCase();
+      const sku  = (p.sku || '').toLowerCase();
+      const cat  = (p.category_name || '').toLowerCase();
+      return name.includes(q) || sku.includes(q) || cat.includes(q);
+    });
+    const rows = container.querySelector('#rows');
+    if (!rows) return;
+    rows.innerHTML = filtered.map(productRow).join('');
+    if (window.lucide?.createIcons) window.lucide.createIcons();
+  };
+  input.removeEventListener?.('__input_products', input.__handlerProducts);
+  input.__handlerProducts = doFilter;
+  input.addEventListener('input', doFilter);
+}
+
+/* ---------- Formulário (HTML) ---------- */
 function formHTML(p = {}) {
   const id          = p.id ?? '';
   const name        = p.name ?? '';
@@ -114,16 +124,9 @@ function formHTML(p = {}) {
   const description = p.description ?? '';
   const active      = (p.is_active ?? p.active ?? true) ? 'checked' : '';
 
-  // Layout solicitado:
-  // "Nome"  "SKU"
-  // "Categoria" "Preço Base"
-  // "Estoque"   "Imagem (URL)"
-  // "Descrição"
-  // "Ativo"
   return `
     <form id="product-form" class="space-y-4">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- Linha 1 -->
         <div>
           <label class="block text-sm mb-1">Nome</label>
           <input name="name" required class="w-full px-3 py-2 border rounded" value="${escapeHtml(name)}">
@@ -133,7 +136,6 @@ function formHTML(p = {}) {
           <input name="sku" class="w-full px-3 py-2 border rounded" value="${escapeHtml(sku)}">
         </div>
 
-        <!-- Linha 2 -->
         <div>
           <label class="block text-sm mb-1">Categoria</label>
           <select name="category_id" required class="w-full px-3 py-2 border rounded">
@@ -142,10 +144,9 @@ function formHTML(p = {}) {
         </div>
         <div>
           <label class="block text-sm mb-1">Preço Base</label>
-          <input name="base_price" required type="number" step="0.01" class="w-full px-3 py-2 border rounded" placeholder="Ex.: 65,00" value="${escapeHtml(base_price)}">
+          <input name="base_price" required class="w-full px-3 py-2 border rounded" placeholder="Ex.: 65,00" value="${escapeHtml(base_price)}">
         </div>
 
-        <!-- Linha 3 -->
         <div>
           <label class="block text-sm mb-1">Estoque</label>
           <input name="stock_text" class="w-full px-3 py-2 border rounded" value="${escapeHtml(stock_text)}">
@@ -155,14 +156,12 @@ function formHTML(p = {}) {
           <input name="image_url" class="w-full px-3 py-2 border rounded" value="${escapeHtml(image_url)}">
         </div>
 
-        <!-- Linha 4 (full) -->
         <div class="md:col-span-2">
           <label class="block text-sm mb-1">Descrição</label>
           <textarea name="description" rows="4" class="w-full px-3 py-2 border rounded" placeholder="Detalhe o produto...">${escapeHtml(description)}</textarea>
         </div>
 
-        <!-- Linha 5 -->
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 md:col-span-2">
           <input id="active" type="checkbox" ${active}>
           <label for="active">Ativo</label>
         </div>
@@ -172,7 +171,8 @@ function formHTML(p = {}) {
   `;
 }
 
-async function openFormModal(product = null) {
+/* ---------- Modal: Criar/Editar ---------- */
+async function openFormModal(container, product = null) {
   showModal({
     title: product ? 'Editar Produto' : 'Novo Produto',
     contentHtml: formHTML(product || {}),
@@ -222,18 +222,17 @@ async function openFormModal(product = null) {
       }
       closeModal();
 
-      // recarrega lista
-      const holder = document.getElementById('list-holder');
-      renderSpinner(holder);
+      // Recarrega a lista com segurança (sem depender de #list-holder)
       const list = await api.get('products');
-      renderTable(holder.parentElement, list);
+      bindList(container, list);
     } catch (err) {
       showToast(err?.message || 'Falha ao salvar.', 'error');
     }
   });
 }
 
-function openDeleteModal(id) {
+/* ---------- Modal: Excluir ---------- */
+function openDeleteModal(container, id) {
   showModal({
     title: 'Excluir Produto',
     contentHtml: `<p class="text-stone-700">Tem certeza que deseja excluir este produto?</p>`,
@@ -250,75 +249,58 @@ function openDeleteModal(id) {
       closeModal();
       showToast('Produto excluído');
 
-      const holder = document.getElementById('list-holder');
-      renderSpinner(holder);
       const list = await api.get('products');
-      renderTable(holder.parentElement, list);
+      bindList(container, list);
     } catch (err) {
       showToast(err?.message || 'Não foi possível excluir.', 'error');
     }
   });
 }
 
-function renderTable(container, list) {
-  renderShell(container);
-  bindList(container, list);
-
-  const newBtn = container.querySelector('#btn-new');
-  newBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    openFormModal(null);
-  });
-
-  container.addEventListener('click', async (ev) => {
-    const editBtn = ev.target.closest?.('.btn-edit');
-    const delBtn  = ev.target.closest?.('.btn-del');
-
-    if (editBtn) {
-      ev.preventDefault();
-      const id = Number(editBtn.dataset.id);
-      if (!id) return;
-      try {
-        const p = await api.get(`products/${id}`);
-        return openFormModal(p);
-      } catch {
-        showToast('Falha ao carregar produto.', 'error');
-      }
-    }
-
-    if (delBtn) {
-      ev.preventDefault();
-      const id = Number(delBtn.dataset.id);
-      if (!id) return;
-      return openDeleteModal(id);
-    }
-  });
-
-  if (window.lucide?.createIcons) window.lucide.createIcons();
-}
-
-// ---------- INIT ----------
+/* ---------- INIT ---------- */
 export async function init(container) {
-  container.innerHTML = `
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-800">Gerenciar Produtos</h1>
-      <button id="btn-new" type="button" class="inline-flex items-center gap-2 bg-amber-600 text-white px-4 py-2 rounded">
-        <i data-lucide="plus"></i> Novo Produto
-      </button>
-    </div>
-    <div class="bg-white rounded shadow">
-      <div class="p-6" id="list-holder"></div>
-    </div>
-  `;
+  renderShell(container);
 
-  const holder = container.querySelector('#list-holder');
-  renderSpinner(holder);
-
+  // Carrega e exibe a lista inicial
   try {
     const list = await api.get('products');
-    renderTable(container, list);
+    bindList(container, list);
   } catch (err) {
-    holder.innerHTML = `<div class="text-red-600">Falha ao carregar produtos. ${escapeHtml(err?.message || '')}</div>`;
+    const rows = container.querySelector('#rows');
+    if (rows) rows.innerHTML = `<tr><td class="px-4 py-3 text-red-600" colspan="7">Falha ao carregar produtos. ${escapeHtml(err?.message || '')}</td></tr>`;
   }
   if (window.lucide?.createIcons) window.lucide.createIcons();
+
+  attachSearch(container);
+
+  // Botão "Novo Produto"
+  container.querySelector('#btn-new')?.addEventListener('click', () => openFormModal(container, null));
+
+  // Delegação para Editar/Excluir (uma vez só)
+  if (!container.__productsDelegationAttached) {
+    container.__productsDelegationAttached = true;
+    container.addEventListener('click', async (ev) => {
+      const editBtn = ev.target.closest?.('.btn-edit');
+      const delBtn  = ev.target.closest?.('.btn-del');
+
+      if (editBtn) {
+        ev.preventDefault();
+        const id = Number(editBtn.dataset.id);
+        if (!id) return;
+        try {
+          const p = await api.get(`products/${id}`);
+          return openFormModal(container, p);
+        } catch {
+          showToast('Falha ao carregar produto.', 'error');
+        }
+      }
+
+      if (delBtn) {
+        ev.preventDefault();
+        const id = Number(delBtn.dataset.id);
+        if (!id) return;
+        return openDeleteModal(container, id);
+      }
+    });
+  }
 }
