@@ -3,201 +3,153 @@ import { getProductById } from './api.js';
 import { addToCart } from './cart.js';
 
 let currentProduct = null;
-let currentPrice = 0;
+
+function moneyBRL(n) {
+  const v = Number(n ?? 0);
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+// --- Galeria (apenas uma imagem, sem miniaturas) ---
+function galleryHTML(images) {
+  const main = images?.[0]?.image_url || images?.[0] || null;
+
+  if (!main) {
+    return `
+      <div class="aspect-square w-full max-w-[560px] mx-auto overflow-hidden rounded-lg border bg-stone-100"></div>
+    `;
+  }
+
+  return `
+    <div class="aspect-square w-full max-w-[560px] mx-auto overflow-hidden rounded-lg border bg-white">
+      <img src="${main}" alt="" class="w-full h-full object-cover object-center select-none" />
+    </div>
+  `;
+}
+
+// --- Formulário de detalhes (apenas para cortinas) ---
+function detailsFormHTML(p) {
+  const d = p.details || {};
+  const isCurtain = (d.type === 'curtain') || (String(p.category_name || '').toLowerCase() === 'cortinas');
+
+  if (!isCurtain) return '';
+
+  const safe = v => (v === null || v === undefined ? '' : String(v));
+
+  return `
+    <form id="pd-form" class="space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm text-stone-600 mb-1">Altura (cm)</label>
+          <input name="height" type="number" step="0.01" min="0" value="${safe(d.height)}" class="w-full px-3 py-2 border rounded" />
+        </div>
+        <div>
+          <label class="block text-sm text-stone-600 mb-1">Largura (cm)</label>
+          <input name="width" type="number" step="0.01" min="0" value="${safe(d.width)}" class="w-full px-3 py-2 border rounded" />
+        </div>
+        <div>
+          <label class="block text-sm text-stone-600 mb-1">Tipo de Trilho/Varão</label>
+          <input name="rail_type" value="${safe(d.rail_type)}" class="w-full px-3 py-2 border rounded" />
+        </div>
+        <div>
+          <label class="block text-sm text-stone-600 mb-1">Cor do Trilho/Varão</label>
+          <input name="rail_color" value="${safe(d.rail_color)}" class="w-full px-3 py-2 border rounded" />
+        </div>
+        <div>
+          <label class="block text-sm text-stone-600 mb-1">Largura do Trilho (m)</label>
+          <input name="rail_width" type="number" step="0.01" min="0" value="${safe(d.rail_width)}" class="w-full px-3 py-2 border rounded" />
+        </div>
+      </div>
+    </form>
+  `;
+}
+
+function quantityHTML() {
+  return `
+    <div class="inline-flex items-center border rounded overflow-hidden">
+      <button id="qty-dec" class="px-3 py-2" type="button">−</button>
+      <input id="qty" type="number" min="1" value="1" class="w-14 text-center border-l border-r py-2">
+      <button id="qty-inc" class="px-3 py-2" type="button">+</button>
+    </div>
+  `;
+}
+
+function renderProductDetail(p) {
+  const container = document.getElementById('product-detail-container');
+  const images = (p.images && p.images.length)
+    ? p.images
+    : (p.image_url ? [{ image_url: p.image_url }] : []);
+
+  container.innerHTML = `
+    <div class="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-2 gap-10">
+      <div id="pd-gallery">${galleryHTML(images)}</div>
+
+      <div>
+        <h1 class="text-4xl font-extrabold text-stone-900 mb-2">${p.name}</h1>
+        ${p.sku ? `<div class="text-sm text-stone-500 mb-4">SKU: ${p.sku}</div>` : ''}
+        <div class="text-2xl font-semibold text-amber-700 mb-6">${moneyBRL(p.base_price ?? p.price)}</div>
+        ${p.description ? `<p class="text-stone-700 leading-relaxed mb-6">${p.description}</p>` : ''}
+
+        ${detailsFormHTML(p)}
+
+        <div class="mt-6 flex items-center gap-4">
+          ${quantityHTML()}
+          <button id="btn-add" class="inline-flex items-center gap-2 bg-amber-700 hover:bg-amber-800 text-white px-5 py-3 rounded">
+            <i data-lucide="shopping-cart"></i> Adicionar ao Carrinho
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Quantidade
+  const qtyEl = document.getElementById('qty');
+  document.getElementById('qty-inc').addEventListener('click', () => {
+    qtyEl.value = Math.max(1, Number(qtyEl.value || 1) + 1);
+  });
+  document.getElementById('qty-dec').addEventListener('click', () => {
+    qtyEl.value = Math.max(1, Number(qtyEl.value || 1) - 1);
+  });
+
+  // Adicionar ao carrinho
+  document.getElementById('btn-add').addEventListener('click', () => {
+    const qty = Math.max(1, Number(qtyEl.value || 1));
+    const form = document.getElementById('pd-form');
+    const extras = form ? Object.fromEntries(new FormData(form).entries()) : {};
+    const main = images?.[0]?.image_url || images?.[0] || null;
+
+    addToCart({
+      id: p.id,
+      name: p.name,
+      price: Number(p.base_price ?? p.price ?? 0),
+      image: main,
+      qty,
+      extras
+    });
+  });
+
+  if (window.lucide?.createIcons) window.lucide.createIcons();
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
-    initMain();
+  initMain();
 
-    const params = new URLSearchParams(window.location.search);
-    const productId = params.get('id');
-    const container = document.getElementById('product-detail-container');
+  const params = new URLSearchParams(window.location.search);
+  const productId = Number(params.get('id') || 0);
+  const container = document.getElementById('product-detail-container');
 
-    if (!productId) {
-        if (container) container.innerHTML = '<p class="text-center text-red-500">Produto não encontrado. ID inválido.</p>';
-        return;
-    }
+  if (!productId) {
+    container.innerHTML = '<p class="text-center text-red-500">Produto não encontrado. ID inválido.</p>';
+    return;
+  }
 
-    try {
-        currentProduct = await getProductById(productId);
-
-        if (!currentProduct) {
-            if (container) container.innerHTML = '<p class="text-center text-red-500">Produto não encontrado.</p>';
-            return;
-        }
-
-        currentProduct.customizableAttributes = transformDetailsToAttributes(currentProduct);
-        currentPrice = parseFloat(currentProduct.price || 0) || 0;
-
-        renderProductDetail();
-    } catch (error) {
-        console.error('Error fetching product details:', error);
-        if (container) container.innerHTML = '<p class="text-center text-red-500">Não foi possível carregar o produto. Tente novamente mais tarde.</p>';
-    }
-});
-
-function transformDetailsToAttributes(product) {
-    if (!product || !product.details) return [];
-
-    const attributes = [];
-    if (product.category_name === 'Cortinas') {
-        attributes.push({ label: 'Largura (m)', type: 'number', id: 'width', 'data-price-per-unit': '50' });
-        attributes.push({ label: 'Altura (m)', type: 'number', id: 'height', 'data-price-per-unit': '30' });
-        attributes.push({ label: 'Tipo de Trilho', type: 'select', id: 'rail_type', options: ['Trilho Suíço', 'Varão Cromado', 'Varão Branco'] });
-    }
-    return attributes;
-}
-
-function renderProductDetail() {
-    const container = document.getElementById('product-detail-container');
-
+  try {
+    currentProduct = await getProductById(productId);
     if (!currentProduct) {
-        if (container) container.innerHTML = '<p class="text-center text-red-500">Produto não encontrado.</p>';
-        return;
+      container.innerHTML = '<p class="text-center text-red-500">Produto não encontrado.</p>';
+      return;
     }
-
-    const imageUrl =
-        currentProduct.image_url ||
-        currentProduct.images?.[0]?.image_url ||
-        'https://placehold.co/600x600/f5f5f4/a37336?text=Ane';
-
-    let customizationHtml = '';
-    if (currentProduct.customizableAttributes && currentProduct.customizableAttributes.length > 0) {
-        customizationHtml = currentProduct.customizableAttributes.map(attr => {
-            let inputHtml = '';
-            switch (attr.type) {
-                case 'select':
-                    inputHtml = `
-                        <select id="${attr.id}" data-label="${attr.label}" class="form-input customization-input">
-                            ${attr.options.map(opt => `<option value="${opt}" data-price-modifier="0">${opt}</option>`).join('')}
-                        </select>
-                    `;
-                    break;
-                case 'number':
-                    inputHtml = `<input type="number" id="${attr.id}" data-label="${attr.label}" data-price-per-unit="${attr['data-price-per-unit'] || 0}" class="form-input customization-input" min="0.5" step="0.1" placeholder="Ex: 2.8">`;
-                    break;
-            }
-            return `<div class="mb-4"><label for="${attr.id}" class="block text-sm font-medium text-stone-700 mb-1">${attr.label}</label>${inputHtml}</div>`;
-        }).join('');
-    }
-
-    container.innerHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16">
-            <div class="aspect-square bg-stone-100 rounded-lg overflow-hidden shadow-md">
-                <img src="${imageUrl}" alt="${currentProduct.name}" class="w-full h-full object-cover">
-            </div>
-            <div class="flex flex-col justify-center">
-                <h1 class="text-3xl lg:text-4xl font-playfair-display font-bold mb-2">${currentProduct.name}</h1>
-                <p class="text-sm text-stone-500 mb-4">SKU: PROD-${currentProduct.id.toString().padStart(5, '0')}</p>
-                <p id="product-price" class="text-3xl font-bold text-amber-800 mb-6">R$ ${(parseFloat(currentProduct.price || 0) || 0).toFixed(2).replace('.', ',')}</p>
-                <div class="prose text-stone-600 mb-6">${currentProduct.description || ''}</div>
-
-                ${customizationHtml ? `<div class="mb-6 border-t pt-6"><h3 class="text-lg font-semibold mb-2">Personalize seu Produto</h3>${customizationHtml}</div>` : ''}
-
-                <div class="flex items-center gap-4 mb-6">
-                    <div class="flex items-center border border-stone-300 rounded-md">
-                        <button id="qty-minus" class="p-3 text-stone-600 hover:bg-stone-100 rounded-l-md"><i data-lucide="minus"></i></button>
-                        <input id="quantity" type="number" value="1" min="1" class="w-12 text-center border-none focus:ring-0">
-                        <button id="qty-plus" class="p-3 text-stone-600 hover:bg-stone-100 rounded-r-md"><i data-lucide="plus"></i></button>
-                    </div>
-                    <button id="add-to-cart-btn" class="flex-grow btn-primary flex items-center justify-center gap-2">
-                        <i data-lucide="shopping-cart"></i>
-                        Adicionar ao Carrinho
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Ícones
-    if (window.lucide && typeof window.lucide.createIcons === 'function') {
-        window.lucide.createIcons();
-    }
-
-    attachEventListeners();
-    updatePrice();
-}
-
-function attachEventListeners() {
-    document.querySelectorAll('.customization-input').forEach(input => {
-        input.addEventListener('change', updatePrice);
-        input.addEventListener('input', updatePrice);
-    });
-
-    const minusBtn = document.getElementById('qty-minus');
-    const plusBtn = document.getElementById('qty-plus');
-    const addBtn = document.getElementById('add-to-cart-btn');
-
-    if (minusBtn) {
-        minusBtn.addEventListener('click', () => {
-            const qtyInput = document.getElementById('quantity');
-            let qty = parseInt(qtyInput.value, 10);
-            if (qty > 1) qtyInput.value = qty - 1;
-        });
-    }
-
-    if (plusBtn) {
-        plusBtn.addEventListener('click', () => {
-            const qtyInput = document.getElementById('quantity');
-            qtyInput.value = (parseInt(qtyInput.value, 10) || 0) + 1;
-        });
-    }
-
-    if (addBtn) addBtn.addEventListener('click', handleAddToCart);
-}
-
-function updatePrice() {
-    let price = parseFloat(currentProduct?.price || 0) || 0;
-
-    document.querySelectorAll('.customization-input').forEach(input => {
-        if (input.tagName === 'SELECT') {
-            const selectedOption = input.options[input.selectedIndex];
-            price += parseFloat(selectedOption?.dataset?.priceModifier || 0) || 0;
-        } else if (input.type === 'number') {
-            const value = parseFloat(input.value) || 0;
-            const pricePerUnit = parseFloat(input.dataset.pricePerUnit || 0) || 0;
-            price += value * pricePerUnit;
-        }
-    });
-
-    currentPrice = price;
-
-    const priceEl = document.getElementById('product-price');
-    if (priceEl) {
-        priceEl.textContent = `R$ ${price.toFixed(2).replace('.', ',')}`;
-    }
-}
-
-function handleAddToCart() {
-    const qtyInput = document.getElementById('quantity');
-    const quantity = Math.max(parseInt(qtyInput?.value, 10) || 1, 1);
-
-    const customizations = [];
-    document.querySelectorAll('.customization-input').forEach(input => {
-        customizations.push({
-            label: input.dataset.label,
-            value: input.value
-        });
-    });
-
-    const item = {
-        id: currentProduct.id,
-        name: currentProduct.name,
-        price: currentPrice,
-        quantity,
-        customizations,
-        image: currentProduct.image_url || currentProduct.images?.[0]?.image_url || null
-    };
-
-    addToCart(item);
-    showToast();
-    initMain();
-}
-
-function showToast() {
-    const toast = document.getElementById('toast');
-    if (!toast) return;
-    toast.classList.remove('opacity-0', 'translate-y-3');
-    setTimeout(() => {
-        toast.classList.add('opacity-0', 'translate-y-3');
-    }, 3000);
-}
+    renderProductDetail(currentProduct);
+  } catch (e) {
+    container.innerHTML = `<p class="text-center text-red-500">Erro ao carregar produto. ${e?.message || ''}</p>`;
+  }
+});

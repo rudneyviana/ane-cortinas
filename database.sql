@@ -342,6 +342,44 @@ INSERT INTO `products` VALUES (1,'Cortina Elegance Bege','Cortina em linho premi
 UNLOCK TABLES;
 
 --
+-- Table structure for table `product_details`
+--
+
+DROP TABLE IF EXISTS `product_details`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `product_details` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `product_id` int(11) NOT NULL,
+  `detail_key` varchar(64) NOT NULL,
+  `detail_value` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_product_key` (`product_id`,`detail_key`),
+  KEY `product_id` (`product_id`),
+  CONSTRAINT `product_details_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `product_details`
+--
+
+LOCK TABLES `product_details` WRITE;
+/*!40000 ALTER TABLE `product_details` DISABLE KEYS */;
+INSERT INTO `product_details` (`product_id`,`detail_key`,`detail_value`) VALUES
+(1,'sku','CTN-0001'),(1,'stock_text','-'),
+(2,'sku','CTN-0002'),(2,'stock_text','-'),
+(3,'sku','CTN-0003'),(3,'stock_text','-'),
+(4,'sku','CTN-0004'),(4,'stock_text','-'),
+(5,'sku','ALM-0001'),(5,'stock_text','25 un.'),
+(6,'sku','ALM-0002'),(6,'stock_text','30 un.'),
+(7,'sku','ALM-0003'),(7,'stock_text','15 un.'),
+(8,'sku','PNG-0001'),(8,'stock_text','50 un.'),
+(9,'sku','PNG-0002'),(9,'stock_text','40 un.');
+/*!40000 ALTER TABLE `product_details` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `users`
 --
 
