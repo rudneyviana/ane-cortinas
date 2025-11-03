@@ -265,8 +265,37 @@ CREATE TABLE `product_cushions_pendants` (
 
 LOCK TABLES `product_cushions_pendants` WRITE;
 /*!40000 ALTER TABLE `product_cushions_pendants` DISABLE KEYS */;
-INSERT INTO `product_cushions_pendants` VALUES (1,5,5,45.00,45.00,25),(2,6,2,50.00,50.00,30),(3,7,4,40.00,60.00,15),(4,8,NULL,15.00,5.00,50),(5,9,NULL,12.00,4.00,40);
+INSERT INTO `product_cushions_pendants` VALUES (1,5,5,45.00,45.00,25),(2,6,2,50.00,50.00,30),(3,7,4,40.00,60.00,15),(4,8,NULL,15.00,5.00,50);
 /*!40000 ALTER TABLE `product_cushions_pendants` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `product_details`
+--
+
+DROP TABLE IF EXISTS `product_details`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `product_details` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `product_id` int(11) NOT NULL,
+  `detail_key` varchar(64) NOT NULL,
+  `detail_value` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_product_key` (`product_id`,`detail_key`),
+  KEY `product_id` (`product_id`),
+  CONSTRAINT `product_details_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `product_details`
+--
+
+LOCK TABLES `product_details` WRITE;
+/*!40000 ALTER TABLE `product_details` DISABLE KEYS */;
+INSERT INTO `product_details` VALUES (1,1,'sku','CTN-0001'),(2,1,'stock_text','-'),(3,2,'sku','CTN-0002'),(4,2,'stock_text','30 un.'),(5,3,'sku','CTN-0003'),(6,3,'stock_text','30 un.'),(7,4,'sku','CTN-0004'),(8,4,'stock_text','30 un.'),(9,5,'sku','ALM-0001'),(10,5,'stock_text','25 un.'),(11,6,'sku','ALM-0002'),(12,6,'stock_text','30 un.'),(13,7,'sku','ALM-0003'),(14,7,'stock_text','10 un.'),(15,8,'sku','PNG-0001'),(16,8,'stock_text','50 un.'),(26,9,'sku','PNG-0002'),(27,9,'stock_text','40 un.');
+/*!40000 ALTER TABLE `product_details` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -295,17 +324,7 @@ CREATE TABLE `product_images` (
 LOCK TABLES `product_images` WRITE;
 /*!40000 ALTER TABLE `product_images` DISABLE KEYS */;
 
-INSERT INTO `product_images` (`id`,`product_id`,`image_url`,`alt_text`,`sort_order`) VALUES
-(1, 1, '/ane-cortinas/images/Cortina%20Elegance%20Bege%20em%20sala%20de%20estar.png', 'Cortina Elegance Bege em sala de estar', 0),
-(2, 2, '/ane-cortinas/images/Cortina%20Blackout%20Premium%20em%20quarto.png', 'Cortina Blackout Premium em quarto', 0),
-(3, 3, '/ane-cortinas/images/Cortina%20Veludo%20Luxo%20em%20ambiente%20cl%C3%A1ssico.png', 'Cortina Veludo Luxo em ambiente clássico', 0),
-(4, 4, '/ane-cortinas/images/Cortina%20Voil%20Transparente%20em%20janela.png', 'Cortina Voil Transparente em janela', 0),
-(5, 5, '/ane-cortinas/images/Almofada%20Decorativa%20Terracota.png', 'Almofada Decorativa Terracota', 0),
-(6, 6, '/ane-cortinas/images/Almofada%20Veludo%20Cinza.png', 'Almofada Veludo Cinza', 0),
-(7, 7, '/ane-cortinas/images/Almofada%20Bordada%20Verde.png', 'Almofada Bordada Verde', 0),
-(8, 8, '/ane-cortinas/images/Pingente%20Decorativo%20Dourado.png', 'Pingente Decorativo Dourado', 0),
-(9, 9, '/ane-cortinas/images/Pingente%20Cristal%20Premium.png', 'Pingente Cristal Premium', 0);
-
+INSERT INTO `product_images` (`id`,`product_id`,`image_url`,`alt_text`,`sort_order`) VALUES (1,1,'/ane-cortinas/images/Cortina%20Elegance%20Bege%20em%20sala%20de%20estar.png','Cortina Elegance Bege em sala de estar',0),(2,2,'/ane-cortinas/images/Cortina%20Blackout%20Premium%20em%20quarto.png','Cortina Blackout Premium em quarto',0),(3,3,'/ane-cortinas/images/Cortina%20Veludo%20Luxo%20em%20ambiente%20cl%C3%A1ssico.png','Cortina Veludo Luxo em ambiente clássico',0),(4,4,'/ane-cortinas/images/Cortina%20Voil%20Transparente%20em%20janela.png','Cortina Voil Transparente em janela',0),(5,5,'/ane-cortinas/images/Almofada%20Decorativa%20Terracota.png','Almofada Decorativa Terracota',0),(6,6,'/ane-cortinas/images/Almofada%20Veludo%20Cinza.png','Almofada Veludo Cinza',0),(7,7,'/ane-cortinas/images/Almofada%20Bordada%20Verde.png','Almofada Bordada Verde',0),(8,8,'/ane-cortinas/images/Pingente%20Decorativo%20Dourado.png','Pingente Decorativo Dourado',0),(9,9,'/ane-cortinas/images/Pingente%20Cristal%20Premium.png','Pingente Cristal Premium',0);
 /*!40000 ALTER TABLE `product_images` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -328,7 +347,7 @@ CREATE TABLE `products` (
   PRIMARY KEY (`id`),
   KEY `category_id` (`category_id`),
   CONSTRAINT `products_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -337,46 +356,8 @@ CREATE TABLE `products` (
 
 LOCK TABLES `products` WRITE;
 /*!40000 ALTER TABLE `products` DISABLE KEYS */;
-INSERT INTO `products` VALUES (1,'Cortina Elegance Bege','Cortina em linho premium com acabamento sofisticado. Ideal para salas de estar e quartos que buscam elegância e sofisticação.',450.00,1,1,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(2,'Cortina Blackout Premium','Cortina blackout em tecido de alta qualidade que bloqueia 100% da luz. Perfeita para quartos e home theaters.',580.00,1,1,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(3,'Cortina Veludo Luxo','Cortina em veludo com caimento pesado e textura aveludada. Ideal para ambientes clássicos e elegantes.',720.00,1,1,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(4,'Cortina Voil Transparente','Cortina leve e delicada em voil transparente. Permite entrada de luz natural mantendo privacidade.',320.00,1,1,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(5,'Almofada Decorativa Terracota','Almofada em tecido linho com enchimento de fibra siliconizada. Acabamento com zíper invisível.',85.00,2,1,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(6,'Almofada Veludo Cinza','Almofada em veludo macio com enchimento premium. Design contemporâneo e elegante.',95.00,2,1,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(7,'Almofada Bordada Verde','Almofada com bordado artesanal em tons de verde. Peça exclusiva e sofisticada.',120.00,2,1,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(8,'Pingente Decorativo Dourado','Pingente em metal dourado com design clássico. Ideal para enfeitar cortinas e cenefas.',45.00,3,1,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(9,'Pingente Cristal Premium','Pingente com detalhes em cristal que refletem a luz. Design sofisticado e elegante.',65.00,3,1,'2025-10-27 19:10:06','2025-10-27 19:10:06');
+INSERT INTO `products` VALUES (1,'Cortina Elegance Bege','Cortina em linho premium com acabamento sofisticado. Ideal para salas de estar e quartos que buscam elegância e sofisticação.',450.00,1,1,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(2,'Cortina Blackout Premium','Cortina blackout em tecido de alta qualidade que bloqueia 100% da luz. Perfeita para quartos e home theaters.',580.00,1,1,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(3,'Cortina Veludo Luxo','Cortina em veludo com caimento pesado e textura aveludada. Ideal para ambientes clássicos e elegantes.',720.00,1,1,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(4,'Cortina Voil Transparente','Cortina leve e delicada em voil transparente. Permite entrada de luz natural mantendo privacidade.',320.00,1,1,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(5,'Almofada Decorativa Terracota','Almofada em tecido linho com enchimento de fibra siliconizada. Acabamento com zíper invisível.',85.00,2,1,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(6,'Almofada Veludo Cinza','Almofada em veludo macio com enchimento premium. Design contemporâneo e elegante.',95.00,2,1,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(7,'Almofada Bordada Verde','Almofada com bordado artesanal em tons de verde. Peça exclusiva e sofisticada.',120.00,2,1,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(8,'Pingente Decorativo Dourado','Pingente em metal dourado com design clássico. Ideal para enfeitar cortinas e cenefas.',45.00,3,1,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(9,'Pingente Cristal Premium','Pingente com detalhes em cristal que refletem a luz. Design sofisticado e elegante.',65.00,3,1,'2025-10-27 22:10:06','2025-10-27 22:10:06');
 /*!40000 ALTER TABLE `products` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `product_details`
---
-
-DROP TABLE IF EXISTS `product_details`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `product_details` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `product_id` int(11) NOT NULL,
-  `detail_key` varchar(64) NOT NULL,
-  `detail_value` text DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_product_key` (`product_id`,`detail_key`),
-  KEY `product_id` (`product_id`),
-  CONSTRAINT `product_details_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `product_details`
---
-
-LOCK TABLES `product_details` WRITE;
-/*!40000 ALTER TABLE `product_details` DISABLE KEYS */;
-INSERT INTO `product_details` (`product_id`,`detail_key`,`detail_value`) VALUES
-(1,'sku','CTN-0001'),(1,'stock_text','-'),
-(2,'sku','CTN-0002'),(2,'stock_text','-'),
-(3,'sku','CTN-0003'),(3,'stock_text','-'),
-(4,'sku','CTN-0004'),(4,'stock_text','-'),
-(5,'sku','ALM-0001'),(5,'stock_text','25 un.'),
-(6,'sku','ALM-0002'),(6,'stock_text','30 un.'),
-(7,'sku','ALM-0003'),(7,'stock_text','15 un.'),
-(8,'sku','PNG-0001'),(8,'stock_text','50 un.'),
-(9,'sku','PNG-0002'),(9,'stock_text','40 un.');
-/*!40000 ALTER TABLE `product_details` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -409,6 +390,10 @@ INSERT INTO `users` VALUES (1,'Admin User','admin@anecortinas.com','$2y$10$92IXU
 UNLOCK TABLES;
 
 --
+-- Dumping events for database 'ane_cortinas'
+--
+
+--
 -- Dumping routines for database 'ane_cortinas'
 --
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -421,4 +406,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-10-30  0:07:00
+-- Dump completed on 2025-11-03  0:57:24
