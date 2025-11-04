@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <a href="products.html" class="inline-block bg-amber-800 text-white font-semibold py-3 px-8 rounded-md hover:bg-amber-900">Ver produtos</a>
             </div>
         `;
+        document.getElementById('checkout-form').innerHTML = '';
         document.getElementById('order-summary').classList.add('hidden');
         return;
     }
@@ -138,18 +139,23 @@ function getPaymentStep() {
 }
 
 function renderOrderSummary() {
-    const summaryContainer = document.getElementById('order-summary').firstElementChild;
+    const summaryContainer = document.getElementById('order-summary');
     let subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     const itemsHtml = cart.map(item => {
         const itemTotal = item.price * item.quantity;
+        // Verificação condicional para customizations
+        const customizationsHtml = (item.customizations && item.customizations.length > 0) 
+            ? item.customizations.map(c => `<p class="text-xs text-stone-500">${c.label}: ${c.value}</p>`).join('') 
+            : '';
+        
         return `
             <div class="flex justify-between items-start py-3">
                 <div class="flex gap-3">
                     <span class="font-semibold text-stone-600">${item.quantity}x</span>
                     <div>
                         <p class="text-stone-800">${item.name}</p>
-                        ${item.customizations.map(c => `<p class="text-xs text-stone-500">${c.label}: ${c.value}</p>`).join('')}
+                        ${customizationsHtml}
                     </div>
                 </div>
                 <span class="text-stone-700">R$ ${itemTotal.toFixed(2).replace('.', ',')}</span>
@@ -256,7 +262,7 @@ async function handleFinishOrder() {
             product_id: item.id,
             quantity: item.quantity,
             unit_price: item.price,
-            item_details_json: item.customizations
+            item_details_json: (item.customizations && item.customizations.length > 0) ? item.customizations : null
         }))
     };
 

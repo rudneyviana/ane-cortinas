@@ -66,16 +66,19 @@ function renderCart() {
 
 function renderCartItem(item) {
     const itemTotal = item.price * item.quantity;
-    const imageUrl = item.image || 'https://placehold.co/100x100/f5f5f4/a37336?text=Ane';
+    const imageUrl = item.image_url || item.image || 'https://placehold.co/100x100/f5f5f4/a37336?text=Ane';
+    
+    // Verificação condicional para customizations
+    const customizationsHtml = (item.customizations && item.customizations.length > 0)
+        ? `<div class="text-xs text-stone-500 mt-1">${item.customizations.map(c => `<span>${c.label}: ${c.value}</span>`).join('<br>')}</div>`
+        : '';
+    
     return `
         <li class="py-4 flex gap-4" data-cart-item-id="${item.cartItemId}">
             <img src="${imageUrl}" alt="${item.name}" class="w-24 h-24 object-cover rounded-md">
             <div class="flex-grow">
                 <h3 class="font-semibold text-lg">${item.name}</h3>
-                ${item.customizations && item.customizations.length > 0 ?
-                    `<div class="text-xs text-stone-500 mt-1">${item.customizations.map(c => `<span>${c.label}: ${c.value}</span>`).join('<br>')}</div>`
-                    : ''
-                }
+                ${customizationsHtml}
                  <p class="text-sm text-stone-600 mt-1">R$ ${item.price.toFixed(2).replace('.', ',')} / un.</p>
             </div>
             <div class="flex flex-col items-end justify-between">
