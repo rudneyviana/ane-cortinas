@@ -131,7 +131,7 @@ CREATE TABLE `fabrics` (
 
 LOCK TABLES `fabrics` WRITE;
 /*!40000 ALTER TABLE `fabrics` DISABLE KEYS */;
-INSERT INTO `fabrics` VALUES (1,'Linho Premium',2.80,50.00,1,NULL,150.00,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(2,'Veludo Luxo',1.40,30.00,2,NULL,80.00,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(3,'Algodão Blackout',2.80,40.00,3,NULL,120.00,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(4,'Voil Transparente',2.80,60.00,1,NULL,200.00,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(5,'Jacquard Elegante',1.40,25.00,4,NULL,60.00,'2025-10-27 19:10:06','2025-10-27 19:10:06');
+INSERT INTO `fabrics` VALUES (1,'Linho Premium',2.80,50.00,1,'/ane-cortinas/images/linho-premium-bege.png',150.00,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(2,'Veludo Luxo',1.40,30.00,2,'/ane-cortinas/images/veludo-luxo-cinza.png',80.00,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(3,'Algodão Blackout',2.80,40.00,3,'/ane-cortinas/images/algodao-azul-marinho.png',120.00,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(4,'Voil Transparente',2.80,60.00,1,'/ane-cortinas/images/voil-transparente-bege.png',200.00,'2025-10-27 19:10:06','2025-10-27 19:10:06'),(5,'Jacquard Elegante',1.40,25.00,4,'/ane-cortinas/images/jacquard-verde-musgo.png',60.00,'2025-10-27 19:10:06','2025-10-27 19:10:06');
 /*!40000 ALTER TABLE `fabrics` ENABLE KEYS */;
 UNLOCK TABLES;
 
